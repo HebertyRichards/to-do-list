@@ -1,87 +1,72 @@
 "use client";
 
+import Link from "next/link";
 import { useAuth } from "@/src/providers/auth";
 import { useTasks } from "@/src/hooks/use-tasks";
 import { useCategories } from "@/src/hooks/use-categories";
 import { useLogout } from "@/src/hooks/use-auth";
-import OnboardingModal from "@/src/components/layout/OnboardingModal";
 import { useNotifications } from "@/src/providers/notifications";
-import type { Task, Category } from "@/src/types/api";
+import OnboardingModal from "@/src/components/layout/OnboardingModal";
+import { TaskBoard } from "@/src/components/tasks/TaskBoard";
+import { Button } from "@/src/components/ui/button";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { Bell } from "lucide-react";
+import { ModeToggle } from "@/src/components/layout/ThemeToggle";
 
 export default function DashboardClient() {
-  const { user } = useAuth();
+  const { user, isLoading: loadingUser } = useAuth();
   const logout = useLogout();
   const { data: tasks = [], isLoading: loadingTasks } = useTasks();
-  const { data: categories = [] } = useCategories();
+  const { data: categories = [], isLoading: loadingCategories } = useCategories();
   const { unreadCount } = useNotifications();
 
+  if (loadingUser) {
+    return (
+      <div className="p-6 space-y-3">
+        <Skeleton className="h-10 w-1/3" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
   if (!user) return null;
+
+  // Sem subtarefas pre-carregadas (modal busca on demand).
+  const subtaskCounts: Record<string, { done: number; total: number }> = {};
 
   return (
     <div className="flex min-h-screen flex-col">
       {!user.onboarded && <OnboardingModal />}
 
-      <header className="flex items-center justify-between border-b px-6 py-3">
-        <span className="font-semibold">To-Do List</span>
+      <header className="flex items-center justify-between border-b bg-surface px-6 py-3">
         <div className="flex items-center gap-4">
-          {unreadCount > 0 && (
-            <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">
-              {unreadCount} nova{unreadCount > 1 ? "s" : ""}
-            </span>
-          )}
-          <span className="text-sm text-gray-600">Olá, {user.username}</span>
-          <button
-            onClick={() => logout.mutate()}
-            className="text-sm text-red-600 underline"
-          >
-            Sair
+          <span className="font-semibold">To-Do List</span>
+          <Link href="/groups" className="text-sm text-foreground-muted hover:text-foreground">
+            Grupos
+          </Link>
+        </div>
+        <div className="flex items-center gap-4">
+          <ModeToggle />
+          <button className="relative">
+            <Bell className="h-5 w-5 text-foreground-muted" />
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] text-destructive-foreground">
+                {unreadCount}
+              </span>
+            )}
           </button>
+          <span className="text-sm text-foreground-muted">Ola, {user.username}</span>
+          <Button variant="ghost" size="sm" onClick={() => logout.mutate()}>
+            Sair
+          </Button>
         </div>
       </header>
 
-      <main className="flex flex-1 gap-6 p-6">
-        <aside className="w-52 shrink-0 space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Categorias</p>
-          {categories.map((cat: Category) => (
-            <div key={cat.id} className="rounded px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer">
-              {cat.name}
-            </div>
-          ))}
-        </aside>
-
-        <section className="flex-1 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Minhas Tarefas</h2>
-            <a href="/groups" className="text-sm text-blue-600 underline">Grupos</a>
-          </div>
-
-          {loadingTasks ? (
-            <p className="text-sm text-gray-400">Carregando...</p>
-          ) : tasks.length === 0 ? (
-            <p className="text-sm text-gray-400">Nenhuma tarefa ainda.</p>
-          ) : (
-            tasks.map((task: Task) => (
-              <div key={task.id} className="rounded border px-4 py-3 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{task.title}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    task.status === "done" ? "bg-green-100 text-green-700" :
-                    task.status === "in_progress" ? "bg-yellow-100 text-yellow-700" :
-                    "bg-gray-100 text-gray-600"
-                  }`}>{task.status}</span>
-                </div>
-                {task.description && (
-                  <p className="text-sm text-gray-500">{task.description}</p>
-                )}
-                <p className="text-xs text-gray-400">
-                  {new Date(task.start_date).toLocaleDateString("pt-BR")} →{" "}
-                  {new Date(task.due_date).toLocaleDateString("pt-BR")}
-                </p>
-              </div>
-            ))
-          )}
-        </section>
-      </main>
+      <TaskBoard
+        categories={categories}
+        tasks={tasks}
+        isLoading={loadingTasks || loadingCategories}
+        subtaskCounts={subtaskCounts}
+      />
     </div>
   );
 }

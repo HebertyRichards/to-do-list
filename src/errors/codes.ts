@@ -34,6 +34,9 @@ export const ErrorCode = {
   DATE_RANGE_INVALID: "DATE_RANGE_INVALID",
   ASSIGNEE_NOT_IN_GROUP: "ASSIGNEE_NOT_IN_GROUP",
 
+  RESET_TOKEN_INVALID: "RESET_TOKEN_INVALID",
+  RESET_TOKEN_EXPIRED: "RESET_TOKEN_EXPIRED",
+
   TOO_MANY_REQUESTS: "TOO_MANY_REQUESTS",
   DATABASE_ERROR: "DATABASE_ERROR",
   INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR",
@@ -70,11 +73,18 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   JOIN_REQUEST_EXPIRED: "Solicitação expirada. Tente novamente.",
   DATE_RANGE_INVALID: "Data de início deve ser anterior à data limite.",
   ASSIGNEE_NOT_IN_GROUP: "Usuário atribuído não faz parte do grupo.",
+  RESET_TOKEN_INVALID: "Token de redefinição inválido.",
+  RESET_TOKEN_EXPIRED: "Token de redefinição expirado. Solicite novamente.",
   TOO_MANY_REQUESTS: "Muitas requisições. Tente mais tarde.",
   DATABASE_ERROR: "Erro ao acessar dados.",
   INTERNAL_SERVER_ERROR: "Erro interno do servidor.",
 };
 
+function isErrorCode(code: string): code is ErrorCode {
+  return Object.prototype.hasOwnProperty.call(ErrorMessages, code);
+}
+
 export function getErrorMessage(code: string, fallback?: string): string {
-  return ErrorMessages[code as ErrorCode] ?? fallback ?? "Erro desconhecido.";
+  if (isErrorCode(code)) return ErrorMessages[code];
+  return fallback ?? "Erro desconhecido.";
 }

@@ -1,24 +1,22 @@
 import "server-only";
 import { initTRPC, TRPCError } from "@trpc/server";
-import { http } from "@/src/services/http";
+import { createHttp, type Http } from "@/src/services/http";
 import { ApiError } from "@/src/lib/api-error";
 import type { User, SessionInfo } from "@/src/types/api";
 
 export type Context = {
   user: User | null;
+  fetch: Http;
 };
 
 export async function createContext({ req }: { req: Request }): Promise<Context> {
+  const cookieHeader = req.headers.get("cookie") ?? "";
+  const fetch = createHttp(cookieHeader || undefined);
   try {
-    const cookieHeader = req.headers.get("cookie") ?? "";
-    if (!cookieHeader) return { user: null };
-
-    const session = await http.get<SessionInfo>("/auth/session", {
-      headers: { cookie: cookieHeader },
-    });
-    return { user: session.user };
+    const session = await fetch.get<SessionInfo>("/auth/session");
+    return { user: session.user, fetch };
   } catch {
-    return { user: null };
+    return { user: null, fetch };
   }
 }
 

@@ -4,6 +4,7 @@ import "./globals.css";
 import { TrpcProvider } from "@/src/providers/trpc";
 import { AuthProvider } from "@/src/providers/auth";
 import { NotificationsProvider } from "@/src/providers/notifications";
+import { ThemeProvider } from "@/src/providers/theme";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -15,15 +16,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
+      <head />
       <body className="min-h-full flex flex-col">
-        <TrpcProvider>
-          <AuthProvider>
-            <NotificationsProvider>
-              {children}
-            </NotificationsProvider>
-          </AuthProvider>
-        </TrpcProvider>
+        <ThemeProvider>
+          <TrpcProvider>
+            <AuthProvider>
+              <NotificationsProvider>
+                {children}
+              </NotificationsProvider>
+            </AuthProvider>
+          </TrpcProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

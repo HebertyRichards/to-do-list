@@ -1,8 +1,6 @@
 export interface User {
-  id: number;
   email: string;
   username: string;
-  full_name: string | null;
   avatar_url: string | null;
   onboarded: boolean;
 }
@@ -10,50 +8,45 @@ export interface User {
 export type TaskStatus = "pending" | "in_progress" | "done" | "archived";
 
 export interface Tag {
-  id: number;
   name: string;
   color: string | null;
 }
 
 export interface Task {
-  id: number;
+  slug: string;
   title: string;
   description: string | null;
   status: TaskStatus;
   start_date: string;
   due_date: string;
-  category_id: number;
-  creator_user_id: number;
-  owner_user_id: number | null;
-  group_id: number | null;
-  assignee_user_id: number | null;
+  category_slug: string;
+  assignee_username: string | null;
   tags: Tag[];
 }
 
 export interface Category {
-  id: number;
+  slug: string;
   name: string;
   color: string | null;
-  owner_user_id: number | null;
-  group_id: number | null;
 }
 
 export type GroupRole = "admin" | "member";
 
 export interface Group {
-  id: number;
+  slug: string;
   name: string;
   description: string | null;
-  admin_user_id: number;
   member_count: number;
 }
 
-export interface GroupCreated extends Omit<Group, "member_count"> {
+export interface GroupCreated {
+  slug: string;
+  name: string;
+  description: string | null;
   key: string;
 }
 
 export interface GroupMember {
-  user_id: number;
   username: string;
   role: GroupRole;
   joined_at: string;
@@ -62,9 +55,7 @@ export interface GroupMember {
 export type JoinRequestStatus = "pending" | "accepted" | "rejected" | "expired";
 
 export interface JoinRequest {
-  id: number;
-  group_id: number;
-  user_id: number;
+  slug: string;
   username: string;
   status: JoinRequestStatus;
   expires_at: string;
@@ -93,4 +84,20 @@ export interface SessionInfo {
   user: User;
   session_expires_at: string;
   access_expires_at: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+  reset_token: string | null;
+}
+
+export interface Subtask {
+  slug: string;
+  task_slug: string;
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  start_date: string;
+  due_date: string;
+  assignee_username: string | null;
 }

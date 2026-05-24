@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
+import { Toaster } from "sonner";
 import { trpc } from "@/src/lib/trpc-client";
 
 function isUnauthorized(err: unknown): boolean {
   if (!(err instanceof TRPCClientError)) return false;
-  const data = err.data as { code?: string } | undefined;
-  return data?.code === "UNAUTHORIZED";
+  return err.data?.code === "UNAUTHORIZED";
 }
 
 function makeQueryClient() {
@@ -37,13 +38,24 @@ export function TrpcProvider({ children }: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
   const [trpcClient] = useState(() =>
     trpc.createClient({
-      links: [httpBatchLink({ url: "/api/trpc" })],
+      links: [
+        httpBatchLink({
+          url: "/api/trpc",
+          fetch(url, options) {
+            return globalThis.fetch(url, { ...options, credentials: "include" });
+          },
+        }),
+      ],
     }),
   );
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+        <Toaster position="bottom-right" richColors closeButton />
+        {process.env.NODE_ENV === "development" && <ReactQueryDevtools initialIsOpen={false} />}
+      </QueryClientProvider>
     </trpc.Provider>
   );
 }

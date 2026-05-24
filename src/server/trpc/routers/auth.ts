@@ -1,43 +1,35 @@
 import "server-only";
 import { z } from "zod";
-import { http } from "@/src/services/http";
 import { publicProcedure, router, mapApiError } from "../init";
+import type { ForgotPasswordResponse } from "@/src/types/api";
 
 export const authRouter = router({
   session: publicProcedure.query(async ({ ctx }) => ctx.user),
 
-  login: publicProcedure
-    .input(z.object({ email: z.string().email(), password: z.string().min(1) }))
-    .mutation(async ({ input }) => {
+  forgotPassword: publicProcedure
+    .input(z.object({ email: z.string().email() }))
+    .mutation(async ({ input, ctx }) => {
       try {
-        return await http.post("/auth/login", input);
+        return await ctx.fetch.post<ForgotPasswordResponse>("/auth/forgot-password", input);
       } catch (e) {
         throw mapApiError(e);
       }
     }),
 
-  register: publicProcedure
-    .input(
-      z.object({
-        email: z.string().email(),
-        username: z.string().min(3).max(60),
-        password: z.string().min(8).max(128),
-        full_name: z.string().max(120).optional(),
-      }),
-    )
-    .mutation(async ({ input }) => {
+  resetPassword: publicProcedure
+    .input(z.object({
+      token: z.string().min(10).max(128),
+      new_password: z.string().min(8).max(128),
+    }))
+    .mutation(async ({ input, ctx }) => {
       try {
-        return await http.post("/auth/register", input);
+        await ctx.fetch.post("/auth/reset-password", {
+          token: input.token,
+          new_password: input.new_password,
+          confirm_new_password: input.new_password,
+        });
       } catch (e) {
         throw mapApiError(e);
       }
     }),
-
-  logout: publicProcedure.mutation(async () => {
-    try {
-      await http.post("/auth/logout");
-    } catch {
-      // ignora erros no logout
-    }
-  }),
 });

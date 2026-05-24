@@ -1,0 +1,64 @@
+"use client";
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useRegister } from "@/src/hooks/use-auth";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+
+const schema = z.object({
+  email: z.string().email("Email invalido"),
+  username: z.string().min(3, "Minimo 3 caracteres").max(60),
+  password: z.string().min(8, "Minimo 8 caracteres").max(128),
+});
+
+type Fields = z.infer<typeof schema>;
+
+interface Props {
+  onSwitchLogin: () => void;
+}
+
+export function RegisterForm({ onSwitchLogin }: Props) {
+  const register = useRegister();
+  const { register: field, handleSubmit, formState: { errors } } = useForm<Fields>({ resolver: zodResolver(schema) });
+
+  return (
+    <form onSubmit={handleSubmit((data) => register.mutate(data))} className="space-y-4">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-bold">Criar conta</h1>
+        <p className="text-sm text-foreground-muted">Comece a organizar suas tarefas</p>
+      </header>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="email">Email</Label>
+        <Input id="email" type="email" autoComplete="email" {...field("email")} />
+        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="username">Username</Label>
+        <Input id="username" autoComplete="username" {...field("username")} />
+        {errors.username && <p className="text-xs text-destructive">{errors.username.message}</p>}
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="password">Senha</Label>
+        <Input id="password" type="password" autoComplete="new-password" {...field("password")} />
+        {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+      </div>
+
+      <Button type="submit" disabled={register.isPending} className="w-full">
+        {register.isPending ? "Criando..." : "Criar conta"}
+      </Button>
+
+      <p className="text-sm text-center">
+        Ja tem conta?{" "}
+        <button type="button" onClick={onSwitchLogin} className="text-primary hover:underline">
+          Entrar
+        </button>
+      </p>
+    </form>
+  );
+}

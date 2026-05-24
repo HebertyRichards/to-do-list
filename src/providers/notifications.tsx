@@ -22,7 +22,7 @@ const NotifContext = createContext<NotifCtx>({
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const userId = user?.id ?? null;
+  const userId = user?.username ?? null;
   const [events, setEvents] = useState<NotificationEvent[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const serviceRef = useRef<NotificationService | null>(null);

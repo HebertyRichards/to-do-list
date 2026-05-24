@@ -1,12 +1,11 @@
 import "server-only";
 import { z } from "zod";
-import { http } from "@/src/services/http";
 import { protectedProcedure, router, mapApiError } from "../init";
 
 export const notificationsRouter = router({
-  list: protectedProcedure.query(async () => {
+  list: protectedProcedure.query(async ({ ctx }) => {
     try {
-      return await http.get("/notifications");
+      return await ctx.fetch.get("/notifications");
     } catch (e) {
       throw mapApiError(e);
     }
@@ -14,17 +13,17 @@ export const notificationsRouter = router({
 
   markRead: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
-        await http.patch(`/notifications/${input.id}/read`);
+        await ctx.fetch.patch(`/notifications/${input.id}/read`);
       } catch (e) {
         throw mapApiError(e);
       }
     }),
 
-  markAllRead: protectedProcedure.mutation(async () => {
+  markAllRead: protectedProcedure.mutation(async ({ ctx }) => {
     try {
-      await http.patch("/notifications/read-all");
+      await ctx.fetch.patch("/notifications/read-all");
     } catch (e) {
       throw mapApiError(e);
     }
