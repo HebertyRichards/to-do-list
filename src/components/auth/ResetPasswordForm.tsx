@@ -8,14 +8,23 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 
+const passwordSchema = z
+  .string()
+  .min(8, "Mínimo 8 caracteres")
+  .max(128)
+  .regex(/[A-Z]/, "Deve conter ao menos uma letra maiúscula")
+  .regex(/[a-z]/, "Deve conter ao menos uma letra minúscula")
+  .regex(/[0-9]/, "Deve conter ao menos um número")
+  .regex(/[^A-Za-z0-9]/, "Deve conter ao menos um caractere especial");
+
 const schema = z
   .object({
-    token: z.string().min(10, "Token invalido"),
-    new_password: z.string().min(8, "Minimo 8 caracteres").max(128),
-    confirm_password: z.string().min(8, "Minimo 8 caracteres"),
+    token: z.string().min(10, "Token inválido"),
+    new_password: passwordSchema,
+    confirm_password: z.string().min(1),
   })
   .refine((d) => d.new_password === d.confirm_password, {
-    message: "Senhas nao conferem",
+    message: "Senhas não conferem",
     path: ["confirm_password"],
   });
 

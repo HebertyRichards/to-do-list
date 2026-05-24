@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/providers/auth";
 import { useTasks } from "@/src/hooks/use-tasks";
 import { useCategories } from "@/src/hooks/use-categories";
@@ -14,13 +16,20 @@ import { Bell } from "lucide-react";
 import { ModeToggle } from "@/src/components/layout/ThemeToggle";
 
 export default function DashboardClient() {
+  const router = useRouter();
   const { user, isLoading: loadingUser } = useAuth();
   const logout = useLogout();
   const { data: tasks = [], isLoading: loadingTasks } = useTasks();
   const { data: categories = [], isLoading: loadingCategories } = useCategories();
   const { unreadCount } = useNotifications();
 
-  if (loadingUser) {
+  useEffect(() => {
+    if (!loadingUser && !user) {
+      router.replace("/auth");
+    }
+  }, [loadingUser, user, router]);
+
+  if (loadingUser || !user) {
     return (
       <div className="p-6 space-y-3">
         <Skeleton className="h-10 w-1/3" />
@@ -28,7 +37,6 @@ export default function DashboardClient() {
       </div>
     );
   }
-  if (!user) return null;
 
   // Sem subtarefas pre-carregadas (modal busca on demand).
   const subtaskCounts: Record<string, { done: number; total: number }> = {};

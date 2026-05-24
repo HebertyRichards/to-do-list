@@ -8,10 +8,19 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 
+const passwordSchema = z
+  .string()
+  .min(8, "Mínimo 8 caracteres")
+  .max(128)
+  .regex(/[A-Z]/, "Deve conter ao menos uma letra maiúscula")
+  .regex(/[a-z]/, "Deve conter ao menos uma letra minúscula")
+  .regex(/[0-9]/, "Deve conter ao menos um número")
+  .regex(/[^A-Za-z0-9]/, "Deve conter ao menos um caractere especial");
+
 const schema = z.object({
-  email: z.string().email("Email invalido"),
-  username: z.string().min(3, "Minimo 3 caracteres").max(60),
-  password: z.string().min(8, "Minimo 8 caracteres").max(128),
+  email: z.string().email("Email inválido"),
+  username: z.string().min(3, "Mínimo 3 caracteres").max(60),
+  password: passwordSchema,
 });
 
 type Fields = z.infer<typeof schema>;

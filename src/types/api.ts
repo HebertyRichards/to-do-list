@@ -1,103 +1,122 @@
-export interface User {
-  email: string;
-  username: string;
-  avatar_url: string | null;
-  onboarded: boolean;
-}
+import { z } from "zod";
 
-export type TaskStatus = "pending" | "in_progress" | "done" | "archived";
+export const UserSchema = z.object({
+  email: z.string().email(),
+  username: z.string(),
+  avatar_url: z.string().nullable(),
+  onboarded: z.boolean(),
+});
+export type User = z.infer<typeof UserSchema>;
 
-export interface Tag {
-  name: string;
-  color: string | null;
-}
+export const TaskStatusSchema = z.enum(["pending", "in_progress", "done", "archived"]);
+export type TaskStatus = z.infer<typeof TaskStatusSchema>;
 
-export interface Task {
-  slug: string;
-  title: string;
-  description: string | null;
-  status: TaskStatus;
-  start_date: string;
-  due_date: string;
-  category_slug: string;
-  assignee_username: string | null;
-  tags: Tag[];
-}
+export const TagSchema = z.object({
+  name: z.string(),
+  color: z.string().nullable(),
+});
+export type Tag = z.infer<typeof TagSchema>;
 
-export interface Category {
-  slug: string;
-  name: string;
-  color: string | null;
-}
+export const TaskSchema = z.object({
+  slug: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  status: TaskStatusSchema,
+  start_date: z.string(),
+  due_date: z.string(),
+  category_slug: z.string(),
+  assignee_username: z.string().nullable(),
+  tags: z.array(TagSchema),
+});
+export type Task = z.infer<typeof TaskSchema>;
 
-export type GroupRole = "admin" | "member";
+export const CategorySchema = z.object({
+  slug: z.string(),
+  name: z.string(),
+  color: z.string().nullable(),
+});
+export type Category = z.infer<typeof CategorySchema>;
 
-export interface Group {
-  slug: string;
-  name: string;
-  description: string | null;
-  member_count: number;
-}
+export const GroupRoleSchema = z.enum(["admin", "member"]);
+export type GroupRole = z.infer<typeof GroupRoleSchema>;
 
-export interface GroupCreated {
-  slug: string;
-  name: string;
-  description: string | null;
-  key: string;
-}
+export const GroupSchema = z.object({
+  slug: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  member_count: z.number(),
+});
+export type Group = z.infer<typeof GroupSchema>;
 
-export interface GroupMember {
-  username: string;
-  role: GroupRole;
-  joined_at: string;
-}
+export const GroupCreatedSchema = z.object({
+  slug: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  key: z.string(),
+});
+export type GroupCreated = z.infer<typeof GroupCreatedSchema>;
 
-export type JoinRequestStatus = "pending" | "accepted" | "rejected" | "expired";
+export const GroupMemberSchema = z.object({
+  username: z.string(),
+  role: GroupRoleSchema,
+  joined_at: z.string(),
+});
+export type GroupMember = z.infer<typeof GroupMemberSchema>;
 
-export interface JoinRequest {
-  slug: string;
-  username: string;
-  status: JoinRequestStatus;
-  expires_at: string;
-  created_at: string;
-}
+export const JoinRequestStatusSchema = z.enum(["pending", "accepted", "rejected", "expired"]);
+export type JoinRequestStatus = z.infer<typeof JoinRequestStatusSchema>;
 
-export type NotificationType =
-  | "join_request_created"
-  | "join_request_accepted"
-  | "join_request_rejected"
-  | "task_assigned"
-  | "subtask_assigned"
-  | "member_removed"
-  | "group_deleted";
+export const JoinRequestSchema = z.object({
+  slug: z.string(),
+  username: z.string(),
+  status: JoinRequestStatusSchema,
+  expires_at: z.string(),
+  created_at: z.string(),
+});
+export type JoinRequest = z.infer<typeof JoinRequestSchema>;
 
-export interface Notification {
-  id: number;
-  type: NotificationType;
-  title: string;
-  payload: Record<string, unknown>;
-  read_at: string | null;
-  created_at: string;
-}
+export const NotificationTypeSchema = z.enum([
+  "join_request_created",
+  "join_request_accepted",
+  "join_request_rejected",
+  "task_assigned",
+  "subtask_assigned",
+  "member_removed",
+  "group_deleted",
+]);
+export type NotificationType = z.infer<typeof NotificationTypeSchema>;
 
-export interface SessionInfo {
-  user: User;
-  session_expires_at: string;
-  access_expires_at: string;
-}
+export const NotificationSchema = z.object({
+  id: z.number(),
+  type: NotificationTypeSchema,
+  title: z.string(),
+  payload: z.record(z.string(), z.unknown()),
+  read_at: z.string().nullable(),
+  created_at: z.string(),
+});
+export type Notification = z.infer<typeof NotificationSchema>;
 
-export interface ForgotPasswordResponse {
-  message: string;
-  reset_token: string | null;
-}
+export const SessionInfoSchema = z.object({
+  user: UserSchema,
+  session_expires_at: z.string(),
+  access_expires_at: z.string(),
+});
+export type SessionInfo = z.infer<typeof SessionInfoSchema>;
 
-export interface Subtask {
-  slug: string;
-  task_slug: string;
-  title: string;
-  description: string | null;
-  status: TaskStatus;
-  start_date: string;
-  due_date: string;
-  assignee_username: string | null;
-}
+export const ForgotPasswordResponseSchema = z.object({
+  message: z.string(),
+  reset_token: z.string().nullable(),
+});
+export type ForgotPasswordResponse = z.infer<typeof ForgotPasswordResponseSchema>;
+
+export const SubtaskSchema = z.object({
+  slug: z.string(),
+  task_slug: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  status: TaskStatusSchema,
+  start_date: z.string(),
+  due_date: z.string(),
+  assignee_username: z.string().nullable(),
+});
+export type Subtask = z.infer<typeof SubtaskSchema>;

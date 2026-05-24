@@ -1,10 +1,9 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { trpc } from "@/src/lib/trpc-client";
-import { useAuth } from "@/src/providers/auth";
 import { getErrorMessage } from "@/src/errors/codes";
 
 async function authFetch(action: string, body?: unknown) {
@@ -24,14 +23,14 @@ async function authFetch(action: string, body?: unknown) {
 }
 
 export function useLogin() {
-  const { refetch } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { email: string; password: string; remember_me?: boolean }) =>
       authFetch("login", input),
     onSuccess: () => {
       toast.success("Bem-vindo de volta!");
-      refetch();
+      queryClient.clear();
       router.push("/dashboard");
     },
     onError: (err: { data?: { code?: string }; message?: string }) => {
@@ -41,14 +40,14 @@ export function useLogin() {
 }
 
 export function useRegister() {
-  const { refetch } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { email: string; username: string; password: string }) =>
       authFetch("register", input),
     onSuccess: () => {
       toast.success("Conta criada com sucesso!");
-      refetch();
+      queryClient.clear();
       router.push("/dashboard");
     },
     onError: (err: { data?: { code?: string }; message?: string }) => {
@@ -58,13 +57,13 @@ export function useRegister() {
 }
 
 export function useLogout() {
-  const { refetch } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => authFetch("logout"),
     onSuccess: () => {
       toast.success("Sessão encerrada.");
-      refetch();
+      queryClient.clear();
       router.push("/auth");
     },
     onError: (err: { data?: { code?: string }; message?: string }) => {
