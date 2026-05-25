@@ -8,23 +8,23 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 
-const schema = z.object({ email: z.string().email("Email invalido") });
+const schema = z.object({ email: z.string().email("Email inválido") });
 type Fields = z.infer<typeof schema>;
 
 interface Props {
   onSwitchLogin: () => void;
-  onTokenIssued: (token: string) => void;
+  onCodeSent: (email: string) => void;
 }
 
-export function ForgotPasswordEmailForm({ onSwitchLogin, onTokenIssued }: Props) {
+export function ForgotPasswordEmailForm({ onSwitchLogin, onCodeSent }: Props) {
   const forgot = useForgotPassword();
-  const { register, handleSubmit, formState: { errors } } = useForm<Fields>({ resolver: zodResolver(schema) });
+  const { register, handleSubmit, getValues, formState: { errors } } = useForm<Fields>({
+    resolver: zodResolver(schema),
+  });
 
   const onSubmit = (data: Fields) => {
     forgot.mutate(data, {
-      onSuccess: (res) => {
-        if (res.reset_token) onTokenIssued(res.reset_token);
-      },
+      onSuccess: () => onCodeSent(data.email),
     });
   };
 
@@ -42,7 +42,7 @@ export function ForgotPasswordEmailForm({ onSwitchLogin, onTokenIssued }: Props)
       </div>
 
       <Button type="submit" disabled={forgot.isPending} className="w-full">
-        {forgot.isPending ? "Enviando..." : "Solicitar token"}
+        {forgot.isPending ? "Enviando..." : "Enviar código"}
       </Button>
 
       <p className="text-sm text-center">

@@ -31,7 +31,9 @@ interface Props {
 
 export function RegisterForm({ onSwitchLogin }: Props) {
   const register = useRegister();
-  const { register: field, handleSubmit, formState: { errors } } = useForm<Fields>({ resolver: zodResolver(schema) });
+  const { register: field, handleSubmit, formState: { errors } } = useForm<Fields>({
+    resolver: zodResolver(schema),
+  });
 
   return (
     <form onSubmit={handleSubmit((data) => register.mutate(data))} className="space-y-4">
@@ -63,7 +65,7 @@ export function RegisterForm({ onSwitchLogin }: Props) {
       </Button>
 
       <p className="text-sm text-center">
-        Ja tem conta?{" "}
+        Já tem conta?{" "}
         <button type="button" onClick={onSwitchLogin} className="text-primary hover:underline">
           Entrar
         </button>

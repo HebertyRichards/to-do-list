@@ -4,10 +4,10 @@ import { useState, useRef, useEffect } from "react";
 import { TaskCard } from "./TaskCard";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useCreateTask } from "@/src/hooks/use-tasks";
-import { Plus } from "lucide-react";
+import { useUpdateCategory, useDeleteCategory } from "@/src/hooks/use-categories";
+import { Plus, Pencil, Trash2, Check, X } from "lucide-react";
+import { localNow } from "@/src/utils/datetime";
 import type { Category, Task } from "@/src/types/api";
-
-const today = () => new Date().toISOString().slice(0, 10);
 
 interface NewTaskFormProps {
   categorySlug: string;
@@ -18,8 +18,9 @@ interface NewTaskFormProps {
 function NewTaskForm({ categorySlug, groupSlug, onDone }: NewTaskFormProps) {
   const create = useCreateTask(groupSlug);
   const [title, setTitle] = useState("");
-  const [startDate, setStartDate] = useState(today());
-  const [dueDate, setDueDate] = useState(today());
+  const [description, setDescription] = useState("");
+  const [startDate, setStartDate] = useState(localNow());
+  const [dueDate, setDueDate] = useState(localNow());
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
@@ -30,11 +31,12 @@ function NewTaskForm({ categorySlug, groupSlug, onDone }: NewTaskFormProps) {
     create.mutate(
       {
         title: title.trim(),
+        description: description.trim() || undefined,
         category_slug: categorySlug,
-        start_date: `${startDate}T00:00:00`,
-        due_date: `${dueDate}T23:59:59`,
+        start_date: `${startDate}:00`,
+        due_date: `${dueDate}:00`,
       },
-      { onSuccess: () => { setTitle(""); onDone(); } },
+      { onSuccess: () => { setTitle(""); setDescription(""); onDone(); } },
     );
   };
 
@@ -48,11 +50,18 @@ function NewTaskForm({ categorySlug, groupSlug, onDone }: NewTaskFormProps) {
         maxLength={180}
         className="h-8 w-full rounded border border-border bg-surface-muted px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
       />
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        placeholder="Descrição (opcional)"
+        rows={2}
+        className="w-full rounded border border-border bg-surface-muted px-2 py-1.5 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+      />
       <div className="grid grid-cols-2 gap-1.5 text-xs text-foreground-muted">
         <div>
           <label className="mb-0.5 block">Início</label>
           <input
-            type="date"
+            type="datetime-local"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             className="h-7 w-full rounded border border-border bg-surface-muted px-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
@@ -61,7 +70,7 @@ function NewTaskForm({ categorySlug, groupSlug, onDone }: NewTaskFormProps) {
         <div>
           <label className="mb-0.5 block">Prazo</label>
           <input
-            type="date"
+            type="datetime-local"
             value={dueDate}
             min={startDate}
             onChange={(e) => setDueDate(e.target.value)}
@@ -100,18 +109,96 @@ interface Props {
 
 export function CategoryColumn({ category, tasks, isLoading, subtaskCounts, onTaskClick, groupSlug }: Props) {
   const [addingTask, setAddingTask] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState(category.name);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  const updateCategory = useUpdateCategory();
+  const deleteCategory = useDeleteCategory();
+
+  useEffect(() => {
+    if (renaming) renameInputRef.current?.focus();
+  }, [renaming]);
+
+  const commitRename = () => {
+    const trimmed = nameDraft.trim();
+    if (trimmed && trimmed !== category.name) {
+      updateCategory.mutate({ slug: category.slug, name: trimmed });
+    }
+    setRenaming(false);
+  };
+
+  const handleDelete = () => {
+    deleteCategory.mutate({ slug: category.slug });
+    setConfirmDelete(false);
+  };
 
   return (
     <div className="flex w-72 shrink-0 flex-col gap-3 rounded-lg bg-surface-muted p-3">
       <header className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <span
-            className="h-2 w-2 rounded-full"
+            className="h-2 w-2 shrink-0 rounded-full"
             style={{ backgroundColor: category.color ?? "#9ca3af" }}
           />
-          <h2 className="text-sm font-semibold text-foreground-muted">{category.name}</h2>
+          {renaming ? (
+            <input
+              ref={renameInputRef}
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              onBlur={commitRename}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitRename();
+                if (e.key === "Escape") { setNameDraft(category.name); setRenaming(false); }
+              }}
+              maxLength={80}
+              className="h-6 flex-1 rounded border border-ring bg-surface px-1.5 text-sm font-semibold focus:outline-none"
+            />
+          ) : (
+            <h2 className="truncate text-sm font-semibold text-foreground-muted">{category.name}</h2>
+          )}
         </div>
-        <span className="text-xs text-foreground-subtle">{tasks.length}</span>
+
+        <div className="flex items-center gap-1 shrink-0 ml-1">
+          {confirmDelete ? (
+            <>
+              <span className="text-xs text-destructive">Excluir?</span>
+              <button
+                onClick={handleDelete}
+                className="rounded p-0.5 text-destructive hover:bg-destructive/10"
+                title="Confirmar exclusão"
+              >
+                <Check className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="rounded p-0.5 text-foreground-muted hover:bg-surface-secondary"
+                title="Cancelar"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="text-xs text-foreground-subtle">{tasks.length}</span>
+              <button
+                onClick={() => { setRenaming(true); setNameDraft(category.name); }}
+                className="rounded p-0.5 text-foreground-subtle hover:text-foreground-muted transition-colors"
+                title="Renomear categoria"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="rounded p-0.5 text-foreground-subtle hover:text-destructive transition-colors"
+                title="Excluir categoria"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </>
+          )}
+        </div>
       </header>
 
       <div className="flex flex-col gap-2 overflow-y-auto">

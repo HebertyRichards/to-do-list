@@ -37,6 +37,9 @@ export const ErrorCode = {
   RESET_TOKEN_INVALID: "RESET_TOKEN_INVALID",
   RESET_TOKEN_EXPIRED: "RESET_TOKEN_EXPIRED",
 
+  VERIFY_CODE_INVALID: "VERIFY_CODE_INVALID",
+  VERIFY_CODE_EXPIRED: "VERIFY_CODE_EXPIRED",
+
   TOO_MANY_REQUESTS: "TOO_MANY_REQUESTS",
   DATABASE_ERROR: "DATABASE_ERROR",
   INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR",
@@ -75,6 +78,8 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   ASSIGNEE_NOT_IN_GROUP: "Usuário atribuído não faz parte do grupo.",
   RESET_TOKEN_INVALID: "Token de redefinição inválido.",
   RESET_TOKEN_EXPIRED: "Token de redefinição expirado. Solicite novamente.",
+  VERIFY_CODE_INVALID: "Código inválido.",
+  VERIFY_CODE_EXPIRED: "Código expirado. Solicite um novo.",
   TOO_MANY_REQUESTS: "Muitas requisições. Tente mais tarde.",
   DATABASE_ERROR: "Erro ao acessar dados.",
   INTERNAL_SERVER_ERROR: "Erro interno do servidor.",

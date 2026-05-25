@@ -3,34 +3,25 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { NotificationService } from "@/src/services/notificationService";
 import { useAuth } from "@/src/providers/auth";
-
-type NotificationEvent = Record<string, unknown>;
+import { trpc } from "@/src/lib/trpc-client";
 
 type NotifCtx = {
-  events: NotificationEvent[];
-  unreadCount: number;
-  isConnected: boolean;
-  clearEvents: () => void;
+  wsConnected: boolean;
 };
 
-const NotifContext = createContext<NotifCtx>({
-  events: [],
-  unreadCount: 0,
-  isConnected: false,
-  clearEvents: () => {},
-});
+const NotifContext = createContext<NotifCtx>({ wsConnected: false });
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const userId = user?.username ?? null;
-  const [events, setEvents] = useState<NotificationEvent[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
+  const utils = trpc.useUtils();
+  const [wsConnected, setWsConnected] = useState(false);
   const serviceRef = useRef<NotificationService | null>(null);
 
   useEffect(() => {
-    if (!userId) {
+    if (!user) {
       serviceRef.current?.disconnect();
       serviceRef.current = null;
+      setWsConnected(false);
       return;
     }
 
@@ -38,23 +29,21 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     serviceRef.current = service;
 
     service.connect(
-      (data) => setEvents((prev) => [data, ...prev]),
-      (connected) => setIsConnected(connected),
+      () => { utils.notifications.list.invalidate(); },
+      setWsConnected,
     );
 
     return () => {
       service.disconnect();
       serviceRef.current = null;
     };
-  }, [userId]);
-
-  const clearEvents = () => setEvents([]);
+  }, [user?.username]);
 
   return (
-    <NotifContext.Provider value={{ events, unreadCount: events.length, isConnected, clearEvents }}>
+    <NotifContext.Provider value={{ wsConnected }}>
       {children}
     </NotifContext.Provider>
   );
 }
 
-export const useNotifications = () => useContext(NotifContext);
+export const useNotificationsCtx = () => useContext(NotifContext);

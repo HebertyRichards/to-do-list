@@ -84,7 +84,7 @@ export function useResetPassword() {
   const router = useRouter();
   return trpc.auth.resetPassword.useMutation({
     onSuccess: () => {
-      toast.success("Senha redefinida. Faca login com a nova senha.");
+      toast.success("Senha redefinida. Faça login com a nova senha.");
       router.push("/auth");
     },
     onError: (err) => {

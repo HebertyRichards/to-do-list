@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader } from "@/src/components/ui/dialog";
+import { useState, useRef, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/src/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Button } from "@/src/components/ui/button";
 import { useSubtasks, useCreateSubtask, useUpdateSubtask, useDeleteSubtask } from "@/src/hooks/use-subtasks";
 import { useUpdateTask } from "@/src/hooks/use-tasks";
-import { Plus, Trash2 } from "lucide-react";
-import type { Task, Subtask } from "@/src/types/api";
-
-const today = () => new Date().toISOString().slice(0, 10);
+import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
+import { localNow, formatDatetimePtBR, formatCreatedAtLocal } from "@/src/utils/datetime";
+import { STATUS_OPTIONS, getStatusOption } from "@/src/utils/statuses";
+import { cn } from "@/src/utils/cn";
+import type { Task, Subtask, TaskStatus } from "@/src/types/api";
 
 interface Props {
   task: Task | null;
@@ -21,8 +22,9 @@ interface Props {
 function NewSubtaskForm({ taskSlug, onDone }: { taskSlug: string; onDone: () => void }) {
   const create = useCreateSubtask();
   const [title, setTitle] = useState("");
-  const [startDate, setStartDate] = useState(today());
-  const [dueDate, setDueDate] = useState(today());
+  const [description, setDescription] = useState("");
+  const [startDate, setStartDate] = useState(localNow());
+  const [dueDate, setDueDate] = useState(localNow());
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,10 +33,11 @@ function NewSubtaskForm({ taskSlug, onDone }: { taskSlug: string; onDone: () => 
       {
         task_slug: taskSlug,
         title: title.trim(),
-        start_date: `${startDate}T00:00:00`,
-        due_date: `${dueDate}T23:59:59`,
+        description: description.trim() || undefined,
+        start_date: `${startDate}:00`,
+        due_date: `${dueDate}:00`,
       },
-      { onSuccess: () => { setTitle(""); onDone(); } },
+      { onSuccess: () => { setTitle(""); setDescription(""); onDone(); } },
     );
   };
 
@@ -48,11 +51,18 @@ function NewSubtaskForm({ taskSlug, onDone }: { taskSlug: string; onDone: () => 
         maxLength={180}
         className="h-8 w-full rounded border border-border bg-surface-muted px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
       />
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        placeholder="Descrição (opcional)"
+        rows={2}
+        className="w-full rounded border border-border bg-surface-muted px-2 py-1.5 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+      />
       <div className="grid grid-cols-2 gap-1.5 text-xs text-foreground-muted">
         <div>
           <label className="mb-0.5 block">Início</label>
           <input
-            type="date"
+            type="datetime-local"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             className="h-7 w-full rounded border border-border bg-surface-muted px-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
@@ -61,7 +71,7 @@ function NewSubtaskForm({ taskSlug, onDone }: { taskSlug: string; onDone: () => 
         <div>
           <label className="mb-0.5 block">Prazo</label>
           <input
-            type="date"
+            type="datetime-local"
             value={dueDate}
             min={startDate}
             onChange={(e) => setDueDate(e.target.value)}
@@ -89,12 +99,111 @@ function NewSubtaskForm({ taskSlug, onDone }: { taskSlug: string; onDone: () => 
   );
 }
 
+function SubtaskRow({ subtask, taskSlug }: { subtask: Subtask; taskSlug: string }) {
+  const updateSubtask = useUpdateSubtask();
+  const deleteSubtask = useDeleteSubtask(taskSlug);
+  const [renaming, setRenaming] = useState(false);
+  const [draft, setDraft] = useState(subtask.title);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const statusOpt = getStatusOption(subtask.status);
+
+  useEffect(() => {
+    if (renaming) inputRef.current?.focus();
+  }, [renaming]);
+
+  const commitRename = () => {
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== subtask.title) {
+      updateSubtask.mutate({ slug: subtask.slug, data: { title: trimmed } });
+    }
+    setRenaming(false);
+  };
+
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    updateSubtask.mutate({ slug: subtask.slug, data: { status: e.target.value as TaskStatus } });
+  };
+
+  const isDone = subtask.status === "done" || subtask.status === "archived";
+
+  return (
+    <div className="flex flex-col gap-1 rounded border p-2">
+      <div className="flex items-center gap-2">
+        {renaming ? (
+          <input
+            ref={inputRef}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commitRename}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitRename();
+              if (e.key === "Escape") { setDraft(subtask.title); setRenaming(false); }
+            }}
+            maxLength={180}
+            className="h-7 flex-1 rounded border border-ring bg-surface-muted px-2 text-sm focus:outline-none"
+          />
+        ) : (
+          <span className={cn("flex-1 text-sm", isDone && "line-through text-foreground-subtle")}>
+            {subtask.title}
+          </span>
+        )}
+        {!renaming && (
+          <button
+            onClick={() => { setRenaming(true); setDraft(subtask.title); }}
+            className="shrink-0 text-foreground-subtle hover:text-foreground-muted transition-colors"
+            title="Renomear"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => deleteSubtask.mutate({ slug: subtask.slug })}
+          className="h-7 w-7 shrink-0"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
+
+      {subtask.description && (
+        <p className="text-xs text-foreground-subtle whitespace-pre-wrap">{subtask.description}</p>
+      )}
+
+      <div className="flex items-center justify-between gap-2 mt-0.5">
+        <select
+          value={subtask.status}
+          onChange={handleStatusChange}
+          className={cn(
+            "rounded px-1.5 py-0.5 text-[11px] font-medium cursor-pointer border-0 outline-none",
+            statusOpt.className,
+          )}
+        >
+          {STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+
+        <span className="text-[11px] text-foreground-subtle">
+          <span className="font-medium text-foreground-muted">@{subtask.creator_username}</span>
+          {" · "}
+          {formatCreatedAtLocal(subtask.created_at)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function TaskModal({ task, onOpenChange }: Props) {
   const { data: subtasks = [], isLoading } = useSubtasks(task?.slug ?? "");
-  const updateSubtask = useUpdateSubtask();
-  const deleteSubtask = useDeleteSubtask(task?.slug ?? "");
   const updateTask = useUpdateTask();
   const [addingSubtask, setAddingSubtask] = useState(false);
+  const [renamingTask, setRenamingTask] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (renamingTask) titleInputRef.current?.focus();
+  }, [renamingTask]);
 
   if (!task) return null;
 
@@ -105,11 +214,12 @@ export function TaskModal({ task, onOpenChange }: Props) {
     });
   };
 
-  const toggleSubtask = (sub: Subtask) => {
-    updateSubtask.mutate({
-      slug: sub.slug,
-      data: { status: sub.status === "done" ? "pending" : "done" },
-    });
+  const commitTaskRename = () => {
+    const trimmed = titleDraft.trim();
+    if (trimmed && trimmed !== task.title) {
+      updateTask.mutate({ slug: task.slug, data: { title: trimmed } });
+    }
+    setRenamingTask(false);
   };
 
   return (
@@ -117,12 +227,47 @@ export function TaskModal({ task, onOpenChange }: Props) {
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <div className="flex items-start gap-3">
-            <Checkbox checked={task.status === "done"} onCheckedChange={toggleTaskStatus} className="mt-1" />
-            <div className="flex-1">
-              <DialogTitle>{task.title}</DialogTitle>
-              <DialogDescription>
-                {new Date(task.start_date).toLocaleDateString("pt-BR")} →{" "}
-                {new Date(task.due_date).toLocaleDateString("pt-BR")}
+            <Checkbox checked={task.status === "done"} onCheckedChange={toggleTaskStatus} className="mt-1 shrink-0" />
+            <div className="flex-1 min-w-0">
+              {renamingTask ? (
+                <>
+                  <DialogTitle className="sr-only">{task.title}</DialogTitle>
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={titleInputRef}
+                      value={titleDraft}
+                      onChange={(e) => setTitleDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") commitTaskRename();
+                        if (e.key === "Escape") { setTitleDraft(task.title); setRenamingTask(false); }
+                      }}
+                      maxLength={180}
+                      className="flex-1 rounded border border-ring bg-surface-muted px-2 py-1 text-base font-semibold focus:outline-none"
+                    />
+                    <button onClick={commitTaskRename} className="text-success hover:text-success/80">
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => { setTitleDraft(task.title); setRenamingTask(false); }} className="text-foreground-muted hover:text-foreground">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <DialogTitle className={task.status === "done" ? "line-through text-foreground-subtle" : ""}>
+                    {task.title}
+                  </DialogTitle>
+                  <button
+                    onClick={() => { setRenamingTask(true); setTitleDraft(task.title); }}
+                    className="text-foreground-subtle hover:text-foreground-muted transition-colors"
+                    title="Renomear tarefa"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+              <DialogDescription className="mt-0.5">
+                {formatDatetimePtBR(task.start_date)} → {formatDatetimePtBR(task.due_date)}
               </DialogDescription>
             </div>
           </div>
@@ -135,6 +280,26 @@ export function TaskModal({ task, onOpenChange }: Props) {
           </TabsList>
 
           <TabsContent value="details" className="space-y-3">
+            <div className="flex items-center justify-between text-[11px] text-foreground-subtle">
+              <span>
+                <span className="font-medium text-foreground-muted">@{task.creator_username}</span>
+                {" · "}
+                {formatCreatedAtLocal(task.created_at)}
+              </span>
+              <select
+                value={task.status}
+                onChange={(e) => updateTask.mutate({ slug: task.slug, data: { status: e.target.value as TaskStatus } })}
+                className={cn(
+                  "rounded px-1.5 py-0.5 text-[11px] font-medium cursor-pointer border-0 outline-none",
+                  getStatusOption(task.status).className,
+                )}
+              >
+                {STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
             {task.description ? (
               <p className="text-sm text-foreground-muted whitespace-pre-wrap">{task.description}</p>
             ) : (
@@ -161,23 +326,7 @@ export function TaskModal({ task, onOpenChange }: Props) {
                 )}
 
                 {subtasks.map((s) => (
-                  <div key={s.slug} className="flex items-center gap-3 rounded border p-2">
-                    <Checkbox
-                      checked={s.status === "done"}
-                      onCheckedChange={() => toggleSubtask(s)}
-                    />
-                    <span className={`flex-1 text-sm ${s.status === "done" ? "line-through text-foreground-subtle" : ""}`}>
-                      {s.title}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteSubtask.mutate({ slug: s.slug })}
-                      className="h-8 w-8"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
+                  <SubtaskRow key={s.slug} subtask={s} taskSlug={task.slug} />
                 ))}
 
                 {addingSubtask ? (

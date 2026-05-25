@@ -24,6 +24,8 @@ export const TaskSchema = z.object({
   status: TaskStatusSchema,
   start_date: z.string(),
   due_date: z.string(),
+  created_at: z.string(),
+  creator_username: z.string(),
   category_slug: z.string(),
   assignee_username: z.string().nullable(),
   tags: z.array(TagSchema),
@@ -105,7 +107,6 @@ export type SessionInfo = z.infer<typeof SessionInfoSchema>;
 
 export const ForgotPasswordResponseSchema = z.object({
   message: z.string(),
-  reset_token: z.string().nullable(),
 });
 export type ForgotPasswordResponse = z.infer<typeof ForgotPasswordResponseSchema>;
 
@@ -117,6 +118,8 @@ export const SubtaskSchema = z.object({
   status: TaskStatusSchema,
   start_date: z.string(),
   due_date: z.string(),
+  created_at: z.string(),
+  creator_username: z.string(),
   assignee_username: z.string().nullable(),
 });
 export type Subtask = z.infer<typeof SubtaskSchema>;

@@ -18,13 +18,15 @@ export const authRouter = router({
 
   resetPassword: publicProcedure
     .input(z.object({
-      token: z.string().min(10).max(128),
+      email: z.string().email(),
+      code: z.string().length(6).regex(/^\d{6}$/),
       new_password: z.string().min(8).max(128),
     }))
     .mutation(async ({ input, ctx }) => {
       try {
         await ctx.fetch.post("/auth/reset-password", {
-          token: input.token,
+          email: input.email,
+          code: input.code,
           new_password: input.new_password,
           confirm_new_password: input.new_password,
         });

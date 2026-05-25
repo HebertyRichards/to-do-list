@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { useMyGroups, useCreateGroup, useJoinGroup } from "@/src/hooks/use-groups";
+import { useMyGroups, useCreateGroup, useJoinGroup, useRenameGroup } from "@/src/hooks/use-groups";
+import { AppShell } from "@/src/components/layout/AppShell";
 import { getErrorMessage } from "@/src/errors/codes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { ChevronLeft, Users, Plus, Key, Copy, Check, ArrowRight } from "lucide-react";
-import { ModeToggle } from "@/src/components/layout/ThemeToggle";
-import type { GroupCreated } from "@/src/types/api";
+import { Users, Plus, Key, Copy, Check, ArrowRight, Pencil, X } from "lucide-react";
+import type { Group, GroupCreated } from "@/src/types/api";
 
 const createSchema = z.object({
   name: z.string().min(1, "Nome obrigatório").max(120, "Máximo 120 caracteres"),
@@ -26,6 +26,86 @@ const joinSchema = z.object({
 
 type CreateFields = z.infer<typeof createSchema>;
 type JoinFields = z.infer<typeof joinSchema>;
+
+function GroupCard({ group }: { group: Group }) {
+  const rename = useRenameGroup();
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState(group.name);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (renaming) inputRef.current?.focus();
+  }, [renaming]);
+
+  const commitRename = () => {
+    const trimmed = nameDraft.trim();
+    if (trimmed && trimmed !== group.name) {
+      rename.mutate({ group_slug: group.slug, name: trimmed });
+    }
+    setRenaming(false);
+  };
+
+  return (
+    <Card className="h-full border border-border bg-surface hover:border-primary/50 hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+      <CardHeader>
+        <div className="flex items-start justify-between gap-2">
+          {renaming ? (
+            <div className="flex flex-1 items-center gap-1.5">
+              <input
+                ref={inputRef}
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                onBlur={commitRename}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitRename();
+                  if (e.key === "Escape") { setNameDraft(group.name); setRenaming(false); }
+                }}
+                maxLength={120}
+                className="flex-1 rounded border border-ring bg-surface-muted px-2 py-1 text-sm font-semibold focus:outline-none"
+                onClick={(e) => e.preventDefault()}
+              />
+              <button onClick={commitRename} className="text-success hover:text-success/80" title="Confirmar">
+                <Check className="h-4 w-4" />
+              </button>
+              <button onClick={() => { setNameDraft(group.name); setRenaming(false); }} className="text-foreground-muted" title="Cancelar">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <CardTitle className="truncate flex-1">{group.name}</CardTitle>
+          )}
+          {!renaming && (
+            <button
+              onClick={(e) => { e.preventDefault(); setRenaming(true); setNameDraft(group.name); }}
+              className="shrink-0 text-foreground-subtle hover:text-foreground-muted transition-colors p-1"
+              title="Renomear grupo"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-foreground-muted line-clamp-3">
+          {group.description || <span className="italic text-foreground-subtle">Sem descrição</span>}
+        </p>
+        <div className="flex items-center justify-between pt-2 border-t border-border/50">
+          <span className="flex items-center gap-1.5 text-xs text-foreground-muted">
+            <Users className="h-3.5 w-3.5" />
+            {group.member_count} {group.member_count === 1 ? "membro" : "membros"}
+          </span>
+          <Link
+            href={`/groups/${group.slug}`}
+            className="flex items-center gap-1 text-xs text-primary font-medium hover:underline"
+            onClick={(e) => renaming && e.preventDefault()}
+          >
+            Acessar <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function GroupsClient() {
   const [activeTab, setActiveTab] = useState("my-groups");
@@ -81,23 +161,8 @@ export default function GroupsClient() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="flex items-center justify-between border-b bg-surface px-6 py-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/dashboard">
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Painel
-            </Link>
-          </Button>
-          <span className="font-semibold text-lg">Grupos</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <ModeToggle />
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8">
+    <AppShell title="Grupos">
+      <div className="max-w-6xl w-full mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <div className="flex items-center justify-between">
             <TabsList className="grid w-full max-w-md grid-cols-3">
@@ -148,29 +213,7 @@ export default function GroupsClient() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {groups.map((group) => (
-                  <Link key={group.slug} href={`/groups/${group.slug}`} className="block group">
-                    <Card className="h-full border border-border bg-surface hover:border-primary/50 hover:shadow-md transition-all duration-200 flex flex-col justify-between">
-                      <CardHeader>
-                        <CardTitle className="group-hover:text-primary transition-colors truncate">
-                          {group.name}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <p className="text-sm text-foreground-muted line-clamp-3">
-                          {group.description || <span className="italic text-foreground-subtle">Sem descrição</span>}
-                        </p>
-                        <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                          <span className="flex items-center gap-1.5 text-xs text-foreground-muted">
-                            <Users className="h-3.5 w-3.5" />
-                            {group.member_count} {group.member_count === 1 ? "membro" : "membros"}
-                          </span>
-                          <span className="flex items-center gap-1 text-xs text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                            Acessar <ArrowRight className="h-3 w-3" />
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
+                  <GroupCard key={group.slug} group={group} />
                 ))}
               </div>
             )}
@@ -292,7 +335,7 @@ export default function GroupsClient() {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

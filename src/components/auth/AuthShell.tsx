@@ -5,9 +5,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { LoginForm } from "./LoginForm";
 import { RegisterForm } from "./RegisterForm";
 import { ForgotPasswordEmailForm } from "./ForgotPasswordEmailForm";
+import { VerifyCodeForm } from "./VerifyCodeForm";
 import { ResetPasswordForm } from "./ResetPasswordForm";
+import { useForgotPassword } from "@/src/hooks/use-auth";
 
-type Step = "login" | "register" | "forgot" | "reset";
+type Step = "login" | "register" | "forgot" | "verify-reset" | "reset";
 
 const transition = {
   initial: { x: 80, opacity: 0 },
@@ -18,7 +20,10 @@ const transition = {
 
 export function AuthShell() {
   const [step, setStep] = useState<Step>("login");
-  const [resetToken, setResetToken] = useState<string>("");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
+
+  const forgotPassword = useForgotPassword();
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-auth-gradient-from to-auth-gradient-to p-4">
@@ -32,26 +37,46 @@ export function AuthShell() {
               />
             </motion.div>
           )}
+
           {step === "register" && (
             <motion.div key="register" {...transition}>
               <RegisterForm onSwitchLogin={() => setStep("login")} />
             </motion.div>
           )}
+
           {step === "forgot" && (
             <motion.div key="forgot" {...transition}>
               <ForgotPasswordEmailForm
                 onSwitchLogin={() => setStep("login")}
-                onTokenIssued={(token) => {
-                  setResetToken(token);
-                  setStep("reset");
+                onCodeSent={(email) => {
+                  setResetEmail(email);
+                  setStep("verify-reset");
                 }}
               />
             </motion.div>
           )}
+
+          {step === "verify-reset" && (
+            <motion.div key="verify-reset" {...transition}>
+              <VerifyCodeForm
+                email={resetEmail}
+                isPending={false}
+                isResending={forgotPassword.isPending}
+                onSubmit={(code) => {
+                  setResetCode(code);
+                  setStep("reset");
+                }}
+                onResend={() => forgotPassword.mutate({ email: resetEmail })}
+                onBack={() => setStep("forgot")}
+              />
+            </motion.div>
+          )}
+
           {step === "reset" && (
             <motion.div key="reset" {...transition}>
               <ResetPasswordForm
-                initialToken={resetToken}
+                email={resetEmail}
+                code={resetCode}
                 onSwitchLogin={() => setStep("login")}
               />
             </motion.div>

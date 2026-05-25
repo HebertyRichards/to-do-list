@@ -13,6 +13,26 @@ export const groupsRouter = router({
       }
     }),
 
+  get: protectedProcedure
+    .input(z.object({ group_slug: z.string() }))
+    .query(async ({ input, ctx }) => {
+      try {
+        return await ctx.fetch.get<Group>(`/groups/${input.group_slug}`);
+      } catch (e) {
+        throw mapApiError(e);
+      }
+    }),
+
+  rename: protectedProcedure
+    .input(z.object({ group_slug: z.string(), name: z.string().min(1).max(120), description: z.string().optional() }))
+    .mutation(async ({ input: { group_slug, ...data }, ctx }) => {
+      try {
+        return await ctx.fetch.patch<Group>(`/groups/${group_slug}`, data);
+      } catch (e) {
+        throw mapApiError(e);
+      }
+    }),
+
   create: protectedProcedure
     .input(z.object({ name: z.string().min(1).max(120), description: z.string().optional() }))
     .mutation(async ({ input, ctx }) => {

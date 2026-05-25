@@ -6,9 +6,11 @@ import { subtasksRouter } from "./routers/subtasks";
 import { categoriesRouter } from "./routers/categories";
 import { groupsRouter } from "./routers/groups";
 import { notificationsRouter } from "./routers/notifications";
+import { usersRouter } from "./routers/users";
 
 export const appRouter = router({
   auth: authRouter,
+  users: usersRouter,
   tasks: tasksRouter,
   subtasks: subtasksRouter,
   categories: categoriesRouter,

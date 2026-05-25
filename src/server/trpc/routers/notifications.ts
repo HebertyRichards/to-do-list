@@ -1,11 +1,12 @@
 import "server-only";
 import { z } from "zod";
 import { protectedProcedure, router, mapApiError } from "../init";
+import type { Notification } from "@/src/types/api";
 
 export const notificationsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     try {
-      return await ctx.fetch.get("/notifications");
+      return await ctx.fetch.get<Notification[]>("/notifications");
     } catch (e) {
       throw mapApiError(e);
     }

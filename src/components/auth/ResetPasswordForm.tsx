@@ -19,7 +19,6 @@ const passwordSchema = z
 
 const schema = z
   .object({
-    token: z.string().min(10, "Token inválido"),
     new_password: passwordSchema,
     confirm_password: z.string().min(1),
   })
@@ -31,33 +30,27 @@ const schema = z
 type Fields = z.infer<typeof schema>;
 
 interface Props {
-  initialToken: string;
+  email: string;
+  code: string;
   onSwitchLogin: () => void;
 }
 
-export function ResetPasswordForm({ initialToken, onSwitchLogin }: Props) {
+export function ResetPasswordForm({ email, code, onSwitchLogin }: Props) {
   const reset = useResetPassword();
   const { register, handleSubmit, formState: { errors } } = useForm<Fields>({
     resolver: zodResolver(schema),
-    defaultValues: { token: initialToken },
   });
 
   const onSubmit = (data: Fields) => {
-    reset.mutate({ token: data.token, new_password: data.new_password });
+    reset.mutate({ email, code, new_password: data.new_password });
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <header className="space-y-1">
         <h1 className="text-2xl font-bold">Nova senha</h1>
-        <p className="text-sm text-foreground-muted">Cole o token recebido e escolha uma nova senha</p>
+        <p className="text-sm text-foreground-muted">Escolha uma nova senha para sua conta</p>
       </header>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="token">Token</Label>
-        <Input id="token" {...register("token")} />
-        {errors.token && <p className="text-xs text-destructive">{errors.token.message}</p>}
-      </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="new_password">Nova senha</Label>

@@ -15,7 +15,6 @@ const AuthContext = createContext<AuthCtx>({ user: null, isLoading: true, refetc
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { data, isLoading, refetch } = trpc.auth.session.useQuery(undefined, {
     retry: false,
-    staleTime: 5 * 60 * 1000,
   });
 
   return (

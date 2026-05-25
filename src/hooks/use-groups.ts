@@ -14,6 +14,22 @@ function showError(err: TRPCMutationError): void {
 }
 
 export const useMyGroups = () => trpc.groups.list.useQuery();
+
+export const useGroup = (groupSlug: string) =>
+  trpc.groups.get.useQuery({ group_slug: groupSlug }, { enabled: !!groupSlug });
+
+export function useRenameGroup() {
+  const utils = trpc.useUtils();
+  return trpc.groups.rename.useMutation({
+    onSuccess: (_d, vars) => {
+      toast.success("Grupo renomeado.");
+      utils.groups.list.invalidate();
+      utils.groups.get.invalidate({ group_slug: vars.group_slug });
+    },
+    onError: showError,
+  });
+}
+
 export const useCreateGroup = () => trpc.groups.create.useMutation({ onError: showError });
 export const useJoinGroup = () =>
   trpc.groups.join.useMutation({
