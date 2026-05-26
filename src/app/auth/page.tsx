@@ -1,4 +1,4 @@
-import { AuthShell } from "@/src/components/auth/AuthShell";
+import { AuthShell } from "@/components/auth/AuthShell";
 
 export default function AuthPage() {
   return <AuthShell />;

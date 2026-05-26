@@ -3,10 +3,10 @@
 import { useState, useRef, useEffect } from "react";
 import { CategoryColumn } from "./CategoryColumn";
 import { TaskModal } from "./TaskModal";
-import { Skeleton } from "@/src/components/ui/skeleton";
-import { useCreateCategory } from "@/src/hooks/use-categories";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCreateCategory } from "@/hooks/use-categories";
 import { Plus } from "lucide-react";
-import type { Category, Task } from "@/src/types/api";
+import type { Category, Task } from "@/types/api";
 
 interface Props {
   categories: Category[];

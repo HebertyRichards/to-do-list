@@ -1,7 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
-import { trpc } from "@/src/lib/trpc-client";
+import { trpc } from "@/lib/trpc-client";
 
 export const useNotificationList = () =>
   trpc.notifications.list.useQuery(undefined, { staleTime: 30_000 });

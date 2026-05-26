@@ -3,11 +3,11 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useLogin } from "@/src/hooks/use-auth";
-import { Button } from "@/src/components/ui/button";
-import { Checkbox } from "@/src/components/ui/checkbox";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
+import { useLogin } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const schema = z.object({
   email: z.string().email("Email invalido"),

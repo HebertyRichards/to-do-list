@@ -1,4 +1,4 @@
-import type { TaskStatus } from "@/src/types/api";
+import type { TaskStatus } from "@/types/api";
 
 export const STATUS_OPTIONS: { value: TaskStatus; label: string; className: string }[] = [
   { value: "pending",     label: "Pendente",     className: "bg-amber-100  text-amber-800  dark:bg-amber-900/40  dark:text-amber-300" },

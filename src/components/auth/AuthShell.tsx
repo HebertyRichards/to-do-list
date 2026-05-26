@@ -7,9 +7,9 @@ import { RegisterForm } from "./RegisterForm";
 import { ForgotPasswordEmailForm } from "./ForgotPasswordEmailForm";
 import { VerifyCodeForm } from "./VerifyCodeForm";
 import { ResetPasswordForm } from "./ResetPasswordForm";
-import { useForgotPassword } from "@/src/hooks/use-auth";
+import { useForgotPassword, useResendVerification, useVerifyEmail } from "@/hooks/use-auth";
 
-type Step = "login" | "register" | "forgot" | "verify-reset" | "reset";
+type Step = "login" | "register" | "verify-email" | "forgot" | "verify-reset" | "reset";
 
 const transition = {
   initial: { x: 80, opacity: 0 },
@@ -22,8 +22,11 @@ export function AuthShell() {
   const [step, setStep] = useState<Step>("login");
   const [resetEmail, setResetEmail] = useState("");
   const [resetCode, setResetCode] = useState("");
+  const [verifyEmail, setVerifyEmail] = useState("");
 
   const forgotPassword = useForgotPassword();
+  const verifyEmailMutation = useVerifyEmail();
+  const resendVerification = useResendVerification();
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-auth-gradient-from to-auth-gradient-to p-4">
@@ -40,7 +43,28 @@ export function AuthShell() {
 
           {step === "register" && (
             <motion.div key="register" {...transition}>
-              <RegisterForm onSwitchLogin={() => setStep("login")} />
+              <RegisterForm
+                onSwitchLogin={() => setStep("login")}
+                onAwaitingVerification={(email) => {
+                  setVerifyEmail(email);
+                  setStep("verify-email");
+                }}
+              />
+            </motion.div>
+          )}
+
+          {step === "verify-email" && (
+            <motion.div key="verify-email" {...transition}>
+              <VerifyCodeForm
+                email={verifyEmail}
+                title="Confirme seu email"
+                description="Digite o código de 6 dígitos enviado para"
+                isPending={verifyEmailMutation.isPending}
+                isResending={resendVerification.isPending}
+                onSubmit={(code) => verifyEmailMutation.mutate({ email: verifyEmail, code })}
+                onResend={() => resendVerification.mutate({ email: verifyEmail })}
+                onBack={() => setStep("login")}
+              />
             </motion.div>
           )}
 

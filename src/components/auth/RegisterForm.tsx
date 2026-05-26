@@ -3,10 +3,10 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useRegister } from "@/src/hooks/use-auth";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
+import { useRegister } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const passwordSchema = z
   .string()
@@ -27,10 +27,11 @@ type Fields = z.infer<typeof schema>;
 
 interface Props {
   onSwitchLogin: () => void;
+  onAwaitingVerification: (email: string) => void;
 }
 
-export function RegisterForm({ onSwitchLogin }: Props) {
-  const register = useRegister();
+export function RegisterForm({ onSwitchLogin, onAwaitingVerification }: Props) {
+  const register = useRegister(onAwaitingVerification);
   const { register: field, handleSubmit, formState: { errors } } = useForm<Fields>({
     resolver: zodResolver(schema),
   });

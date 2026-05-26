@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { protectedProcedure, router, mapApiError } from "../init";
-import type { Group, GroupCreated, GroupMember, JoinRequest } from "@/src/types/api";
+import type { Group, GroupCreated, GroupMember, JoinRequest } from "@/types/api";
 
 export const groupsRouter = router({
   list: protectedProcedure

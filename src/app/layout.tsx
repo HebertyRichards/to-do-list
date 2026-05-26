@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { TrpcProvider } from "@/src/providers/trpc";
-import { AuthProvider } from "@/src/providers/auth";
-import { NotificationsProvider } from "@/src/providers/notifications";
-import { ThemeProvider } from "@/src/providers/theme";
+import { TrpcProvider } from "@/providers/trpc";
+import { AuthProvider } from "@/providers/auth";
+import { NotificationsProvider } from "@/providers/notifications";
+import { ThemeProvider } from "@/providers/theme";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });

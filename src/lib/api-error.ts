@@ -1,4 +1,4 @@
-import { getErrorMessage } from "@/src/errors/codes";
+import { getErrorMessage } from "@/errors/codes";
 
 export class ApiError extends Error {
   constructor(

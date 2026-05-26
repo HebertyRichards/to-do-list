@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { protectedProcedure, router, mapApiError } from "../init";
-import type { Category } from "@/src/types/api";
+import type { Category } from "@/types/api";
 
 export const categoriesRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {

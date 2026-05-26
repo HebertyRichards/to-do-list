@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { Toaster } from "sonner";
-import { trpc } from "@/src/lib/trpc-client";
+import { trpc } from "@/lib/trpc-client";
 
 function isUnauthorized(err: unknown): boolean {
   if (!(err instanceof TRPCClientError)) return false;

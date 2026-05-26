@@ -1,8 +1,8 @@
 "use client";
 
 import { toast } from "sonner";
-import { trpc } from "@/src/lib/trpc-client";
-import { getErrorMessage } from "@/src/errors/codes";
+import { trpc } from "@/lib/trpc-client";
+import { getErrorMessage } from "@/errors/codes";
 
 type TRPCMutationError = {
   data?: { code?: string | null } | null;

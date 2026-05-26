@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { protectedProcedure, router, mapApiError } from "../init";
-import type { Task } from "@/src/types/api";
+import type { Task } from "@/types/api";
 
 const TaskCreateInput = z.object({
   title: z.string().min(1).max(180),

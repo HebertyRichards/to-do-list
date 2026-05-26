@@ -2,13 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/src/providers/auth";
-import { useTasks } from "@/src/hooks/use-tasks";
-import { useCategories } from "@/src/hooks/use-categories";
-import { AppShell } from "@/src/components/layout/AppShell";
-import OnboardingModal from "@/src/components/layout/OnboardingModal";
-import { TaskBoard } from "@/src/components/tasks/TaskBoard";
-import { Skeleton } from "@/src/components/ui/skeleton";
+import { useAuth } from "@/providers/auth";
+import { useTasks } from "@/hooks/use-tasks";
+import { useCategories } from "@/hooks/use-categories";
+import { AppShell } from "@/components/layout/AppShell";
+import OnboardingModal from "@/components/layout/OnboardingModal";
+import { TaskBoard } from "@/components/tasks/TaskBoard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardClient() {
   const router = useRouter();

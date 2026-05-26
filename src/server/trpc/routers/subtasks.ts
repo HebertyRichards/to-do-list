@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { protectedProcedure, router, mapApiError } from "../init";
-import type { Subtask } from "@/src/types/api";
+import type { Subtask } from "@/types/api";
 
 const SubtaskCreateInput = z.object({
   task_slug: z.string(),

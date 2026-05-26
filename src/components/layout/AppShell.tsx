@@ -1,25 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/src/providers/auth";
-import { useLogout } from "@/src/hooks/use-auth";
-import { useUpdateProfile } from "@/src/hooks/use-profile";
-import { useNotificationList, useMarkRead, useMarkAllRead } from "@/src/hooks/use-notifications";
-import { ModeToggle } from "@/src/components/layout/ThemeToggle";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/src/components/ui/dialog";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
-import { Skeleton } from "@/src/components/ui/skeleton";
-import { formatCreatedAtLocal } from "@/src/utils/datetime";
+import { useAuth } from "@/providers/auth";
+import { useLogout } from "@/hooks/use-auth";
+import { useUpdateProfile } from "@/hooks/use-profile";
+import { useNotificationList, useMarkRead, useMarkAllRead } from "@/hooks/use-notifications";
+import { ModeToggle } from "@/components/layout/ThemeToggle";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatCreatedAtLocal } from "@/utils/datetime";
 import {
   LayoutDashboard, Users, Bell, Settings, LogOut,
-  ChevronLeft, ChevronRight, CheckCheck, X,
+  ChevronLeft, ChevronRight, CheckCheck,
 } from "lucide-react";
-import { cn } from "@/src/utils/cn";
-import type { Notification } from "@/src/types/api";
+import { cn } from "@/utils/cn";
+import type { Notification } from "@/types/api";
 
 const NOTIF_TYPE_LABELS: Record<string, string> = {
   join_request_created: "Solicitação de entrada",
@@ -61,20 +61,15 @@ function NotificationItem({ notif }: { notif: Notification }) {
 function ProfileModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user } = useAuth();
   const update = useUpdateProfile();
-  const [username, setUsername] = useState(user?.username ?? "");
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url ?? "");
 
-  useEffect(() => {
-    if (open) {
-      setUsername(user?.username ?? "");
-      setAvatarUrl(user?.avatar_url ?? "");
-    }
-  }, [open, user]);
-
-  const submit = (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const fd = new FormData(e.currentTarget);
     update.mutate(
-      { username: username.trim() || undefined, avatar_url: avatarUrl.trim() || null },
+      {
+        username: (fd.get("username") as string).trim() || undefined,
+        avatar_url: (fd.get("avatar_url") as string).trim() || null,
+      },
       { onSuccess: () => onClose() },
     );
   };
@@ -85,13 +80,14 @@ function ProfileModal({ open, onClose }: { open: boolean; onClose: () => void })
         <DialogHeader>
           <DialogTitle>Configurações do perfil</DialogTitle>
         </DialogHeader>
-        <form onSubmit={submit} className="space-y-4 pt-1">
+        {/* key={String(open)} força remount ao abrir, reaplicando defaultValue */}
+        <form key={String(open)} onSubmit={submit} className="space-y-4 pt-1">
           <div className="space-y-1.5">
             <Label htmlFor="prof-username">Nome de usuário</Label>
             <Input
               id="prof-username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              name="username"
+              defaultValue={user?.username ?? ""}
               minLength={3}
               maxLength={60}
             />
@@ -100,8 +96,8 @@ function ProfileModal({ open, onClose }: { open: boolean; onClose: () => void })
             <Label htmlFor="prof-avatar">URL do avatar (opcional)</Label>
             <Input
               id="prof-avatar"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
+              name="avatar_url"
+              defaultValue={user?.avatar_url ?? ""}
               placeholder="https://..."
             />
           </div>

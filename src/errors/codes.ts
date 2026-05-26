@@ -40,6 +40,9 @@ export const ErrorCode = {
   VERIFY_CODE_INVALID: "VERIFY_CODE_INVALID",
   VERIFY_CODE_EXPIRED: "VERIFY_CODE_EXPIRED",
 
+  EMAIL_NOT_VERIFIED: "EMAIL_NOT_VERIFIED",
+  EMAIL_ALREADY_VERIFIED: "EMAIL_ALREADY_VERIFIED",
+
   TOO_MANY_REQUESTS: "TOO_MANY_REQUESTS",
   DATABASE_ERROR: "DATABASE_ERROR",
   INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR",
@@ -80,6 +83,8 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   RESET_TOKEN_EXPIRED: "Token de redefinição expirado. Solicite novamente.",
   VERIFY_CODE_INVALID: "Código inválido.",
   VERIFY_CODE_EXPIRED: "Código expirado. Solicite um novo.",
+  EMAIL_NOT_VERIFIED: "Email não verificado. Confirme seu email para entrar.",
+  EMAIL_ALREADY_VERIFIED: "Email já verificado.",
   TOO_MANY_REQUESTS: "Muitas requisições. Tente mais tarde.",
   DATABASE_ERROR: "Erro ao acessar dados.",
   INTERNAL_SERVER_ERROR: "Erro interno do servidor.",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/src/providers/auth";
+import { useAuth } from "@/providers/auth";
 
 export default function OnboardingModal() {
   const [open, setOpen] = useState(true);

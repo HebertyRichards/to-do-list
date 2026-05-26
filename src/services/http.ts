@@ -1,4 +1,4 @@
-import { parseApiError } from "@/src/lib/api-error";
+import { parseApiError } from "@/lib/api-error";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 

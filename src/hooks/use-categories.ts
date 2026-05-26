@@ -1,8 +1,8 @@
 "use client";
 
 import { toast } from "sonner";
-import { trpc } from "@/src/lib/trpc-client";
-import { getErrorMessage } from "@/src/errors/codes";
+import { trpc } from "@/lib/trpc-client";
+import { getErrorMessage } from "@/errors/codes";
 
 // Structural type — compatible with TRPCClientErrorLike for any procedure
 type TRPCMutationError = {

@@ -1,10 +1,10 @@
 "use client";
 
-import { useGroupTasks } from "@/src/hooks/use-tasks";
-import { useGroupCategories } from "@/src/hooks/use-categories";
-import { useGroup } from "@/src/hooks/use-groups";
-import { TaskBoard } from "@/src/components/tasks/TaskBoard";
-import { AppShell } from "@/src/components/layout/AppShell";
+import { useGroupTasks } from "@/hooks/use-tasks";
+import { useGroupCategories } from "@/hooks/use-categories";
+import { useGroup } from "@/hooks/use-groups";
+import { TaskBoard } from "@/components/tasks/TaskBoard";
+import { AppShell } from "@/components/layout/AppShell";
 
 interface Props {
   groupSlug: string;

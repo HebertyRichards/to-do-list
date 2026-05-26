@@ -1,12 +1,12 @@
 "use client";
 
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
-import { useUpdateTask } from "@/src/hooks/use-tasks";
-import { formatCreatedAtLocal } from "@/src/utils/datetime";
-import { STATUS_OPTIONS, getStatusOption } from "@/src/utils/statuses";
-import { cn } from "@/src/utils/cn";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useUpdateTask } from "@/hooks/use-tasks";
+import { formatCreatedAtLocal } from "@/utils/datetime";
+import { STATUS_OPTIONS, getStatusOption } from "@/utils/statuses";
+import { cn } from "@/utils/cn";
 import { User as UserIcon } from "lucide-react";
-import type { Task, TaskStatus } from "@/src/types/api";
+import type { Task, TaskStatus } from "@/types/api";
 
 interface Props {
   task: Task;

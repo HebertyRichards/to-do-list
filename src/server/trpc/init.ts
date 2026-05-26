@@ -1,8 +1,8 @@
 import "server-only";
 import { initTRPC, TRPCError } from "@trpc/server";
-import { createHttp, type Http } from "@/src/services/http";
-import { ApiError } from "@/src/lib/api-error";
-import type { User, SessionInfo } from "@/src/types/api";
+import { createHttp, type Http } from "@/services/http";
+import { ApiError } from "@/lib/api-error";
+import type { User, SessionInfo } from "@/types/api";
 
 export type Context = {
   user: User | null;

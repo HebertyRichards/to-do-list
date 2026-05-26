@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { protectedProcedure, router, mapApiError } from "../init";
-import type { Notification } from "@/src/types/api";
+import type { Notification } from "@/types/api";
 
 export const notificationsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {

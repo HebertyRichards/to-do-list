@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_PATHS = ["/auth", "/api/trpc", "/api/auth", "/api-internal", "/socket"];
 
@@ -15,7 +14,7 @@ export async function proxy(request: NextRequest) {
   if (!hasAccess && hasRefresh) {
     try {
       const cookieHeader = request.headers.get("cookie") ?? "";
-      const apiUrl = process.env.API_URL!;
+      const apiUrl = process.env.API_URL ?? "";
       const res = await fetch(`${apiUrl}/auth/refresh`, {
         method: "POST",
         headers: {
@@ -56,6 +55,8 @@ export async function proxy(request: NextRequest) {
     }
     return response;
   }
+
+  return NextResponse.next();
 }
 
 export const config = {

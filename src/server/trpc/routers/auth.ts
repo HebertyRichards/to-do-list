@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { publicProcedure, router, mapApiError } from "../init";
-import type { ForgotPasswordResponse } from "@/src/types/api";
+import type { ForgotPasswordResponse } from "@/types/api";
 
 export const authRouter = router({
   session: publicProcedure.query(async ({ ctx }) => ctx.user),
@@ -30,6 +30,16 @@ export const authRouter = router({
           new_password: input.new_password,
           confirm_new_password: input.new_password,
         });
+      } catch (e) {
+        throw mapApiError(e);
+      }
+    }),
+
+  resendVerification: publicProcedure
+    .input(z.object({ email: z.string().email() }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        await ctx.fetch.post("/auth/resend-verification", input);
       } catch (e) {
         throw mapApiError(e);
       }

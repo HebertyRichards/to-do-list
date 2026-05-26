@@ -3,10 +3,10 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useForgotPassword } from "@/src/hooks/use-auth";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
+import { useForgotPassword } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const schema = z.object({ email: z.string().email("Email inválido") });
 type Fields = z.infer<typeof schema>;
@@ -18,7 +18,7 @@ interface Props {
 
 export function ForgotPasswordEmailForm({ onSwitchLogin, onCodeSent }: Props) {
   const forgot = useForgotPassword();
-  const { register, handleSubmit, getValues, formState: { errors } } = useForm<Fields>({
+  const { register, handleSubmit, formState: { errors } } = useForm<Fields>({
     resolver: zodResolver(schema),
   });
 

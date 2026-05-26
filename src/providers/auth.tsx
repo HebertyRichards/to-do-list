@@ -1,8 +1,8 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import { trpc } from "@/src/lib/trpc-client";
-import type { User } from "@/src/types/api";
+import { trpc } from "@/lib/trpc-client";
+import type { User } from "@/types/api";
 
 type AuthCtx = {
   user: User | null;
@@ -13,12 +13,12 @@ type AuthCtx = {
 const AuthContext = createContext<AuthCtx>({ user: null, isLoading: true, refetch: () => {} });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { data, isLoading, refetch } = trpc.auth.session.useQuery(undefined, {
+  const { data, isPending, refetch } = trpc.auth.session.useQuery(undefined, {
     retry: false,
   });
 
   return (
-    <AuthContext.Provider value={{ user: data ?? null, isLoading, refetch }}>
+    <AuthContext.Provider value={{ user: data ?? null, isLoading: isPending, refetch }}>
       {children}
     </AuthContext.Provider>
   );

@@ -6,15 +6,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { useMyGroups, useCreateGroup, useJoinGroup, useRenameGroup } from "@/src/hooks/use-groups";
-import { AppShell } from "@/src/components/layout/AppShell";
-import { getErrorMessage } from "@/src/errors/codes";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
-import { Card, CardHeader, CardTitle, CardContent } from "@/src/components/ui/card";
-import { Button } from "@/src/components/ui/button";
-import { Skeleton } from "@/src/components/ui/skeleton";
+import { useMyGroups, useCreateGroup, useJoinGroup, useRenameGroup } from "@/hooks/use-groups";
+import { AppShell } from "@/components/layout/AppShell";
+import { getErrorMessage } from "@/errors/codes";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Users, Plus, Key, Copy, Check, ArrowRight, Pencil, X } from "lucide-react";
-import type { Group, GroupCreated } from "@/src/types/api";
+import type { Group, GroupCreated } from "@/types/api";
 
 const createSchema = z.object({
   name: z.string().min(1, "Nome obrigatório").max(120, "Máximo 120 caracteres"),

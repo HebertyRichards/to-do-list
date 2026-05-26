@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 
-const API_URL = process.env.API_URL!;
+const API_URL = process.env.API_URL ?? "";
 
 interface HeadersWithGetSetCookie extends Headers {
   getSetCookie(): string[];
@@ -20,6 +20,7 @@ const ALLOWED: Record<string, string> = {
   register: "POST",
   logout: "POST",
   refresh: "POST",
+  "verify-email": "POST",
 };
 
 export async function POST(request: NextRequest) {

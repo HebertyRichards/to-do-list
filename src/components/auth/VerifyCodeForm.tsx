@@ -3,9 +3,9 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const schema = z.object({
   code: z.string().length(6, "O código deve ter 6 dígitos").regex(/^\d{6}$/, "Apenas números"),
@@ -20,9 +20,20 @@ interface Props {
   onBack: () => void;
   isPending: boolean;
   isResending: boolean;
+  title?: string;
+  description?: string;
 }
 
-export function VerifyCodeForm({ email, onSubmit, onResend, onBack, isPending, isResending }: Props) {
+export function VerifyCodeForm({
+  email,
+  onSubmit,
+  onResend,
+  onBack,
+  isPending,
+  isResending,
+  title = "Código de redefinição",
+  description = "Digite o código de 6 dígitos enviado para",
+}: Props) {
   const { register, handleSubmit, formState: { errors } } = useForm<Fields>({
     resolver: zodResolver(schema),
   });
@@ -30,9 +41,9 @@ export function VerifyCodeForm({ email, onSubmit, onResend, onBack, isPending, i
   return (
     <form onSubmit={handleSubmit((data) => onSubmit(data.code))} className="space-y-4">
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold">Código de redefinição</h1>
+        <h1 className="text-2xl font-bold">{title}</h1>
         <p className="text-sm text-foreground-muted">
-          Digite o código de 6 dígitos enviado para{" "}
+          {description}{" "}
           <span className="font-medium text-foreground">{email}</span>
         </p>
       </header>

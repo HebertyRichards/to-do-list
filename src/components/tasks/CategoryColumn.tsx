@@ -2,12 +2,12 @@
 
 import { useState, useRef, useEffect } from "react";
 import { TaskCard } from "./TaskCard";
-import { Skeleton } from "@/src/components/ui/skeleton";
-import { useCreateTask } from "@/src/hooks/use-tasks";
-import { useUpdateCategory, useDeleteCategory } from "@/src/hooks/use-categories";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCreateTask } from "@/hooks/use-tasks";
+import { useUpdateCategory, useDeleteCategory } from "@/hooks/use-categories";
 import { Plus, Pencil, Trash2, Check, X } from "lucide-react";
-import { localNow } from "@/src/utils/datetime";
-import type { Category, Task } from "@/src/types/api";
+import { localNow } from "@/utils/datetime";
+import type { Category, Task } from "@/types/api";
 
 interface NewTaskFormProps {
   categorySlug: string;

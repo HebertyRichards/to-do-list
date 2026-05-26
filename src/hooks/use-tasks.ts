@@ -1,8 +1,8 @@
 "use client";
 
 import { toast } from "sonner";
-import { trpc } from "@/src/lib/trpc-client";
-import { getErrorMessage } from "@/src/errors/codes";
+import { trpc } from "@/lib/trpc-client";
+import { getErrorMessage } from "@/errors/codes";
 
 export const useTasks = () => trpc.tasks.list.useQuery();
 

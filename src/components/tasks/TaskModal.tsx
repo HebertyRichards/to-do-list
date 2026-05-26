@@ -1,18 +1,18 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/src/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
-import { Checkbox } from "@/src/components/ui/checkbox";
-import { Skeleton } from "@/src/components/ui/skeleton";
-import { Button } from "@/src/components/ui/button";
-import { useSubtasks, useCreateSubtask, useUpdateSubtask, useDeleteSubtask } from "@/src/hooks/use-subtasks";
-import { useUpdateTask } from "@/src/hooks/use-tasks";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { useSubtasks, useCreateSubtask, useUpdateSubtask, useDeleteSubtask } from "@/hooks/use-subtasks";
+import { useUpdateTask } from "@/hooks/use-tasks";
 import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
-import { localNow, formatDatetimePtBR, formatCreatedAtLocal } from "@/src/utils/datetime";
-import { STATUS_OPTIONS, getStatusOption } from "@/src/utils/statuses";
-import { cn } from "@/src/utils/cn";
-import type { Task, Subtask, TaskStatus } from "@/src/types/api";
+import { localNow, formatDatetimePtBR, formatCreatedAtLocal } from "@/utils/datetime";
+import { STATUS_OPTIONS, getStatusOption } from "@/utils/statuses";
+import { cn } from "@/utils/cn";
+import type { Task, Subtask, TaskStatus } from "@/types/api";
 
 interface Props {
   task: Task | null;
