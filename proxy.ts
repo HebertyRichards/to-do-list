@@ -3,33 +3,40 @@ import { logger } from "@/lib/logger";
 
 const PUBLIC_PATHS = ["/auth", "/api/trpc", "/api/auth", "/api-internal", "/socket"];
 
-// Headers de segurança aplicados a toda resposta que passa pelo proxy.
-// CSP estática: o Next ainda exige 'unsafe-inline'/'unsafe-eval' em script.
-// Endurecer com nonce por request é o próximo passo possível justamente por
-// estar no proxy. HSTS sem `preload` por enquanto (preload é difícil de reverter).
-const SECURITY_HEADERS: Record<string, string> = {
+const IS_PROD = process.env.NODE_ENV === "production";
+
+const STATIC_SECURITY_HEADERS: Record<string, string> = {
   "X-Frame-Options": "DENY",
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-  "Content-Security-Policy": [
+};
+
+function buildCsp(nonce: string): string {
+  const scriptSrc = IS_PROD
+    ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
+    : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+
+  return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    scriptSrc,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https:",
+    "img-src 'self' data: https: blob:",
     "connect-src 'self' ws: wss:",
     "font-src 'self' data:",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-  ].join("; "),
-};
+    "object-src 'none'",
+  ].join("; ");
+}
 
-function withSecurityHeaders(response: NextResponse): NextResponse {
-  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+function applySecurityHeaders(response: NextResponse, csp: string): NextResponse {
+  for (const [key, value] of Object.entries(STATIC_SECURITY_HEADERS)) {
     response.headers.set(key, value);
   }
+  response.headers.set("Content-Security-Policy", csp);
   return response;
 }
 
@@ -38,6 +45,18 @@ export async function proxy(request: NextRequest) {
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
   const hasAccess = request.cookies.has("tdl_access");
   const hasRefresh = request.cookies.has("tdl_refresh");
+
+  const nonce = btoa(crypto.randomUUID());
+  const csp = buildCsp(nonce);
+
+  const renderInit = IS_PROD
+    ? (() => {
+        const headers = new Headers(request.headers);
+        headers.set("x-nonce", nonce);
+        headers.set("Content-Security-Policy", csp);
+        return { request: { headers } };
+      })()
+    : undefined;
 
   let refreshed = false;
   let newCookies: string[] = [];
@@ -61,8 +80,6 @@ export async function proxy(request: NextRequest) {
         }
       }
     } catch (e) {
-      // Refresh falhou por motivo não-HTTP (rede/timeout). O fail-closed abaixo
-      // trata o redirect; aqui só registramos no server para não perder o sinal.
       logger.warn("proxy: token refresh request failed", {
         path: pathname,
         error: e instanceof Error ? e.message : String(e),
@@ -71,7 +88,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!isPublic && !hasAccess && !refreshed) {
-    return withSecurityHeaders(NextResponse.redirect(new URL("/auth", request.url)));
+    return applySecurityHeaders(NextResponse.redirect(new URL("/auth", request.url)), csp);
   }
 
   if ((hasAccess || refreshed) && pathname === "/auth") {
@@ -81,18 +98,18 @@ export async function proxy(request: NextRequest) {
         response.headers.append("Set-Cookie", cookie);
       }
     }
-    return withSecurityHeaders(response);
+    return applySecurityHeaders(response, csp);
   }
 
   if (refreshed) {
-    const response = NextResponse.next();
+    const response = NextResponse.next(renderInit);
     for (const cookie of newCookies) {
       response.headers.append("Set-Cookie", cookie);
     }
-    return withSecurityHeaders(response);
+    return applySecurityHeaders(response, csp);
   }
 
-  return withSecurityHeaders(NextResponse.next());
+  return applySecurityHeaders(NextResponse.next(renderInit), csp);
 }
 
 export const config = {
