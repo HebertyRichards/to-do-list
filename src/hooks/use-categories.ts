@@ -2,18 +2,7 @@
 
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc-client";
-import { getErrorMessage } from "@/errors/codes";
-
-// Structural type — compatible with TRPCClientErrorLike for any procedure
-type TRPCMutationError = {
-  data?: { code?: string | null } | null;
-  message: string;
-};
-
-function onErr(err: TRPCMutationError): void {
-  const code = err.data?.code ?? "";
-  toast.error(getErrorMessage(code, err.message));
-}
+import { showError } from "@/errors/toast";
 
 export const useCategories = () => trpc.categories.list.useQuery();
 
@@ -31,7 +20,7 @@ export function useCreateCategory(groupSlug?: string) {
         utils.categories.list.invalidate();
       }
     },
-    onError: onErr,
+    onError: showError,
   });
 }
 
@@ -40,8 +29,9 @@ export function useUpdateCategory() {
   return trpc.categories.update.useMutation({
     onSuccess: () => {
       utils.categories.list.invalidate();
+      utils.categories.listGroup.invalidate();
     },
-    onError: onErr,
+    onError: showError,
   });
 }
 
@@ -50,7 +40,10 @@ export function useDeleteCategory() {
   return trpc.categories.delete.useMutation({
     onSuccess: () => {
       utils.categories.list.invalidate();
+      utils.categories.listGroup.invalidate();
+      utils.tasks.list.invalidate();
+      utils.tasks.listGroup.invalidate();
     },
-    onError: onErr,
+    onError: showError,
   });
 }

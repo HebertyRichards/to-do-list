@@ -28,7 +28,10 @@ export const TaskSchema = z.object({
   creator_username: z.string(),
   category_slug: z.string(),
   assignee_username: z.string().nullable(),
+  assignee_avatar_url: z.string().nullable(),
   tags: z.array(TagSchema),
+  subtask_done_count: z.number(),
+  subtask_total_count: z.number(),
 });
 export type Task = z.infer<typeof TaskSchema>;
 
@@ -121,5 +124,6 @@ export const SubtaskSchema = z.object({
   created_at: z.string(),
   creator_username: z.string(),
   assignee_username: z.string().nullable(),
+  assignee_avatar_url: z.string().nullable(),
 });
 export type Subtask = z.infer<typeof SubtaskSchema>;

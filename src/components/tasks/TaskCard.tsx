@@ -1,35 +1,49 @@
 "use client";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { memo } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useUpdateTask } from "@/hooks/use-tasks";
 import { formatCreatedAtLocal } from "@/utils/datetime";
 import { STATUS_OPTIONS, getStatusOption } from "@/utils/statuses";
 import { cn } from "@/utils/cn";
-import { User as UserIcon } from "lucide-react";
 import type { Task, TaskStatus } from "@/types/api";
 
 interface Props {
   task: Task;
-  doneCount: number;
-  totalCount: number;
-  onClick: () => void;
+  onSelect: (task: Task) => void;
 }
 
-export function TaskCard({ task, doneCount, totalCount, onClick }: Props) {
+function TaskCardImpl({ task, onSelect }: Props) {
   const update = useUpdateTask();
   const statusOpt = getStatusOption(task.status);
   const isDone = task.status === "done" || task.status === "archived";
+  const doneCount = task.subtask_done_count;
+  const totalCount = task.subtask_total_count;
 
-  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    e.stopPropagation();
-    update.mutate({ slug: task.slug, data: { status: e.target.value as TaskStatus } });
+  const handleStatusChange = (value: string) => {
+    update.mutate({ slug: task.slug, data: { status: value as TaskStatus } });
   };
 
   return (
-    <button
-      onClick={onClick}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect(task)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect(task);
+        }
+      }}
       className={cn(
-        "w-full rounded-md border bg-surface p-3 text-left shadow-sm transition-all hover:shadow-md",
+        "w-full rounded-md border bg-surface p-3 text-left shadow-sm transition-all hover:shadow-md cursor-pointer",
         isDone && "opacity-60",
       )}
     >
@@ -50,26 +64,30 @@ export function TaskCard({ task, doneCount, totalCount, onClick }: Props) {
         </div>
       )}
 
-      <div className="mt-2 flex items-center gap-1.5 text-[11px] text-foreground-subtle">
-        <span className="font-medium text-foreground-muted">@{task.creator_username}</span>
-        <span>·</span>
-        <span>{formatCreatedAtLocal(task.created_at)}</span>
+      <div className="mt-2 text-[11px] text-foreground-subtle">
+        {formatCreatedAtLocal(task.created_at)}
       </div>
 
       <div className="mt-2 flex items-center justify-between gap-2">
-        <select
-          value={task.status}
-          onChange={handleStatusChange}
-          onClick={(e) => e.stopPropagation()}
-          className={cn(
-            "rounded px-1.5 py-0.5 text-[11px] font-medium cursor-pointer border-0 outline-none",
-            statusOpt.className,
-          )}
-        >
-          {STATUS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+        <Select value={task.status} onValueChange={handleStatusChange}>
+          <SelectTrigger
+            size="sm"
+            onClick={(e) => e.stopPropagation()}
+            className={cn(
+              "h-auto w-fit gap-1 rounded border-0 px-1.5 py-0.5 text-[11px] font-medium shadow-none focus-visible:ring-1",
+              statusOpt.className,
+            )}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
+            {STATUS_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <div className="flex items-center gap-2 shrink-0">
           {(doneCount > 0 || totalCount > 0) && (
@@ -78,14 +96,22 @@ export function TaskCard({ task, doneCount, totalCount, onClick }: Props) {
             </span>
           )}
           {task.assignee_username && (
-            <Avatar className="h-5 w-5">
-              <AvatarFallback className="text-[9px]">
-                <UserIcon className="h-3 w-3" />
+            <Avatar className="h-5 w-5" title={`@${task.assignee_username}`}>
+              {task.assignee_avatar_url && (
+                <AvatarImage src={task.assignee_avatar_url} alt={task.assignee_username} />
+              )}
+              <AvatarFallback className="text-[9px] uppercase">
+                {task.assignee_username[0]}
               </AvatarFallback>
             </Avatar>
           )}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
+
+export const TaskCard = memo(
+  TaskCardImpl,
+  (prev, next) => prev.task === next.task && prev.onSelect === next.onSelect,
+);

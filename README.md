@@ -1,6 +1,6 @@
 # To-Do List — Frontend
 
-Interface web construída com **Next.js 16**, **tRPC** e **TanStack Query**. Consome a API FastAPI do backend via camada tRPC server-side, com autenticação por cookies httpOnly e notificações em tempo real via WebSocket.
+Interface web para gerenciamento de tarefas individuais e em grupo, no estilo Kanban. Construída com **Next.js 16** (App Router), **tRPC** e **TanStack Query**. Consome a API FastAPI do backend através de uma camada tRPC server-side, com autenticação por cookies httpOnly e notificações em tempo real via WebSocket.
 
 ---
 
@@ -8,488 +8,330 @@ Interface web construída com **Next.js 16**, **tRPC** e **TanStack Query**. Con
 
 | Camada | Tecnologia |
 |---|---|
-| Framework | Next.js 16.2.6 (App Router) |
-| API client | tRPC v11 + TanStack Query v5 (+ Devtools em dev) |
+| Framework | Next.js 16 (App Router, output standalone) |
+| API client | tRPC v11 + TanStack Query v5 |
 | Formulários | React Hook Form + Zod |
 | UI | Tailwind CSS 4 + shadcn/ui local (Radix UI) |
 | Animações | Framer Motion |
 | Toasts | Sonner |
-| Runtime | Node.js 22 |
+| Tema | next-themes (claro/escuro/sistema) |
 | Gerenciador de pacotes | pnpm |
 | TypeScript | Strict mode |
 
 ---
 
+## Funcionalidades
+
+- **Autenticação completa** — cadastro com verificação de email por código, login, logout, recuperação e redefinição de senha, exclusão de conta.
+- **Onboarding** — modal de boas-vindas na primeira entrada.
+- **Tarefas individuais** — board pessoal em `/dashboard`, organizado por categorias.
+- **Grupos** — criação de grupos com chave de convite, aprovação/recusa de pedidos de entrada, papéis (membro/admin/dono), promoção de membros, remoção e saída.
+- **Kanban** — categorias como colunas; tarefas com título, descrição, tags, datas de início/prazo, status, responsável e subtarefas.
+- **Subtarefas** — um nível, com os mesmos campos da tarefa e contador de progresso no card.
+- **Notificações em tempo real** — via WebSocket, com badge de não lidas e painel no topo.
+- **Tema** — alternância claro/escuro/sistema.
+
+---
+
 ## Arquitetura
+
+O Next.js atua como **BFF (Backend for Frontend)**: o browser nunca fala direto com o FastAPI. Todo o tráfego passa pelo Next, que repassa o cookie bruto ao backend sem inspecionar os tokens.
 
 ```
 componentes (client)
-    ↓
-hooks (TanStack Query via tRPC)
-    ↓
-tRPC routers (server-only)
-    ↓
-http.ts (fetch com credentials)
-    ↓
-FastAPI backend
+    ↓  hooks (TanStack Query via tRPC)
+    ↓  routers tRPC (server-only)   ──►  http.ts (fetch com cookie)  ──►  FastAPI
 ```
 
-O Next.js funciona como **BFF (Backend for Frontend)**: o browser chama `/api/trpc`, o tRPC server repassa para o FastAPI com o header `cookie` bruto — sem manipular o conteúdo dos tokens.
+Dois canais de comunicação com o backend:
+
+1. **tRPC** (`/api/trpc`) — usado pela maioria das operações (queries e mutations tipadas).
+2. **Bridge REST** (`/api/auth`) — usado pelos fluxos de autenticação que precisam repassar `Set-Cookie` ao browser (login, registro, logout, refresh, verificação de email, exclusão de conta), já que o `httpBatchLink` do tRPC não expõe `Set-Cookie`.
+
+Além disso, há **rewrites** diretos (`/api-internal`, `/socket`) para casos que apontam para o backend sem passar pela camada tRPC.
 
 ---
 
 ## Estrutura de pastas
 
 ```
-to-do-list/
-├── app/                              # Next.js App Router
-│   ├── (app)/                        # Grupo de rotas autenticadas
-│   │   ├── dashboard/                # Board individual
-│   │   │   ├── page.tsx
-│   │   │   └── DashboardClient.tsx
-│   │   └── groups/
-│   │       ├── page.tsx              # Lista de grupos / criar / entrar
-│   │       ├── GroupsClient.tsx
-│   │       └── [id]/                 # Board do grupo (slug-based)
-│   │           ├── page.tsx
-│   │           └── GroupBoardClient.tsx
-│   ├── (auth)/                       # Rotas públicas
-│   │   └── auth/
-│   │       └── page.tsx              # Renderiza <AuthShell />
-
+src/
+├── app/                              # App Router
+│   ├── dashboard/                    # Board individual (page + DashboardClient)
+│   ├── groups/                       # Lista de grupos
+│   │   └── [id]/                     # Board do grupo (slug-based)
+│   ├── settings/                     # Página de configurações do perfil
+│   ├── auth/                         # Tela única de autenticação
 │   ├── api/
+│   │   ├── auth/route.ts             # Bridge REST p/ cookies
 │   │   └── trpc/[trpc]/route.ts      # Handler HTTP do tRPC
-│   ├── layout.tsx                    # Root layout com providers
-│   └── page.tsx                      # Redirect → /dashboard
-│
-├── src/
-│   ├── components/
-│   │   ├── auth/                     # Fluxo de autenticação com transições
-│   │   │   ├── AuthShell.tsx         # Orquestra os 4 forms com AnimatePresence
-│   │   │   ├── LoginForm.tsx
-│   │   │   ├── RegisterForm.tsx
-│   │   │   ├── ForgotPasswordEmailForm.tsx
-│   │   │   └── ResetPasswordForm.tsx
-│   │   ├── tasks/                    # Kanban estilo RunRunIt
-│   │   │   ├── TaskBoard.tsx         # Container com colunas
-│   │   │   ├── CategoryColumn.tsx    # Uma coluna = uma categoria
-│   │   │   ├── TaskCard.tsx          # Card com contador done/total
-│   │   │   └── TaskModal.tsx         # Modal com tabs (Detalhes / Subtarefas)
-│   │   ├── layout/
-│   │   │   └── OnboardingModal.tsx
-│   │   └── ui/                       # shadcn/ui local
-│   │       ├── button.tsx
-│   │       ├── input.tsx
-│   │       ├── label.tsx
-│   │       ├── dialog.tsx
-│   │       ├── tabs.tsx
-│   │       ├── checkbox.tsx
-│   │       ├── avatar.tsx
-│   │       ├── card.tsx
-│   │       └── skeleton.tsx
-│   ├── errors/
-│   │   └── codes.ts                  # Enum ErrorCode + getErrorMessage()
-│   ├── hooks/                        # Wrappers sobre trpc.*.useQuery/useMutation
-│   │   ├── use-auth.ts               # Inclui useForgotPassword / useResetPassword
-│   │   ├── use-categories.ts
-│   │   ├── use-groups.ts
-│   │   ├── use-tasks.ts
-│   │   └── use-subtasks.ts
-│   ├── lib/
-│   │   ├── api-error.ts              # ApiError + parseApiError (type guard)
-│   │   └── trpc-client.ts            # createTRPCReact
-│   ├── providers/
-│   │   ├── auth.tsx                  # AuthProvider + useAuth
-│   │   ├── notifications.tsx         # NotificationsProvider + useNotifications
-│   │   └── trpc.tsx                  # TrpcProvider + Sonner Toaster + Devtools
-│   ├── server/
-│   │   └── trpc/
-│   │       ├── init.ts               # Context, createContext, procedures
-│   │       ├── root.ts               # AppRouter (agrega todos os routers)
-│   │       └── routers/
-│   │           ├── auth.ts
-│   │           ├── categories.ts
-│   │           ├── groups.ts
-│   │           ├── notifications.ts
-│   │           ├── tasks.ts
-│   │           └── subtasks.ts
-│   ├── services/
-│   │   ├── http.ts                   # Cliente fetch tipado (get/post/patch/delete)
-│   │   └── notificationService.ts   # NotificationService (WebSocket + reconnect)
-│   ├── types/
-│   │   └── api.ts                    # Interfaces TypeScript (User, Task, Subtask…)
-│   └── utils/
-│       └── cn.ts                     # Helper twMerge + clsx
-│
-├── proxy.ts                          # Next.js 16 Proxy (ex-middleware)
-├── next.config.ts
-├── package.json
-├── tsconfig.json
-└── Dockerfile
+│   ├── layout.tsx                    # Root layout + providers
+│   ├── page.tsx                      # Redirect → /dashboard
+│   ├── not-found.tsx                 # 404
+│   ├── error.tsx                     # Boundary de erro de rota
+│   └── global-error.tsx              # Boundary de erro do layout raiz
+├── components/
+│   ├── auth/                         # AuthShell + steps (login, register, verify, forgot, reset)
+│   ├── groups/                       # GroupMembersDialog
+│   ├── tasks/                        # TaskBoard, CategoryColumn, TaskCard,
+│   │   └── task-modal/               # ItemFields/FieldsBlock/SubtasksTab/CreateTaskModal/...
+│   ├── layout/                       # AppShell + app-shell/ (Sidebar, Topbar, ...)
+│   └── ui/                           # shadcn/ui local (button, dialog, select, datetime-field, ...)
+├── errors/
+│   ├── codes.ts                      # Enum ErrorCode + getErrorMessage() (PT-BR)
+│   └── toast.ts                      # showError() — toast de erro centralizado
+├── hooks/                            # use-auth, use-tasks, use-subtasks, use-categories,
+│                                     # use-groups, use-notifications, use-profile
+├── lib/
+│   ├── api-error.ts                  # ApiError + parseApiError
+│   ├── auth-client.ts                # authFetch() p/ a bridge REST
+│   ├── logger.ts                     # logger estruturado (server-side)
+│   └── trpc-client.ts                # createTRPCReact
+├── providers/
+│   ├── auth.tsx                      # AuthProvider + useAuth
+│   ├── notifications.tsx             # NotificationsProvider
+│   ├── theme.tsx                     # next-themes wrapper
+│   └── trpc.tsx                      # TrpcProvider + QueryClient + Sonner
+├── server/trpc/
+│   ├── init.ts                       # Context, procedures, mapApiError
+│   ├── root.ts                       # AppRouter
+│   └── routers/                      # auth, users, tasks, subtasks, categories, groups, notifications
+├── services/
+│   ├── http.ts                       # Cliente fetch tipado
+│   └── notificationService.ts        # WebSocket + reconexão
+├── types/
+│   ├── api.ts                        # Schemas Zod + tipos do backend
+│   └── task-modal.ts                 # Tipos do modal de tarefa/subtarefa
+└── utils/                            # cn, datetime, statuses
+
+proxy.ts                              # Next 16 Proxy (ex-middleware)
+next.config.ts                        # rewrites /api-internal, /socket
 ```
 
 ---
 
 ## Variáveis de ambiente
 
-Crie um arquivo `.env` na raiz do frontend.
+Crie um `.env` na raiz.
 
-### Desenvolvimento local
+| Variável | Quem lê | Descrição |
+|---|---|---|
+| `API_URL` | Apenas server (BFF + proxy) | URL absoluta do backend FastAPI. **Nunca exposta ao browser** |
+| `NEXT_PUBLIC_WS_URL` | Browser (embutida no build) | URL base do WebSocket. Mudá-la exige rebuild |
+| `PORT` / `HOSTNAME` | Runtime (Dockerfile) | Porta/host do `next start` em produção |
 
-```env
-API_URL=http://localhost:8000
-NEXT_PUBLIC_WS_URL=ws://localhost:8000
-```
-
-### Produção (Docker)
-
-```env
-API_URL=http://backend:8000
-NEXT_PUBLIC_WS_URL=wss://seu-dominio.com
-```
-
-`API_URL` é usada apenas pelo servidor Next.js (nunca exposta ao browser). `NEXT_PUBLIC_WS_URL` é embutida no bundle do cliente em build time — defina antes do `docker compose build`, pois mudá-la depois exige rebuild.
+| Variável | Dev local | docker-compose | Produção |
+|---|---|---|---|
+| `API_URL` | `http://localhost:8000` | `http://backend:8000` | URL pública do backend |
+| `NEXT_PUBLIC_WS_URL` | `ws://localhost:8000` | `ws://localhost:8000` | `wss://seu-dominio.com` |
 
 ---
 
 ## Desenvolvimento local
 
-### Pré-requisitos
-
-- Node.js 22+
-- pnpm
-- Backend rodando (ver README do backend)
-
-### 1. Instalar dependências
+**Pré-requisitos:** Node.js, pnpm e o backend rodando.
 
 ```bash
-pnpm install
+pnpm install          # dependências
+pnpm dev              # servidor de dev (http://localhost:3000)
+pnpm build            # build de produção (output: standalone)
+pnpm start            # roda o build
+pnpm lint             # ESLint
+pnpm exec tsc --noEmit # typecheck
 ```
 
-### 2. Criar `.env`
-
-Crie o arquivo `.env` na raiz do frontend com os valores da seção **Variáveis de ambiente — Desenvolvimento local** acima.
-
-### 3. Iniciar
-
-```bash
-pnpm dev
-```
-
-Acesse `http://localhost:3000` — o proxy redireciona automaticamente para `/auth` se não houver sessão.
-
-### Comandos
-
-```bash
-pnpm dev            # Servidor de desenvolvimento
-pnpm build          # Build de produção (output: standalone)
-pnpm start          # Iniciar build de produção
-pnpm lint           # ESLint
-pnpm tsc --noEmit   # Typecheck
-```
-
----
-
-## Produção com Docker
-
-O `docker-compose.yml` está no repositório do **backend**. O Dockerfile do frontend usa `output: "standalone"` do Next.js (imagem mínima sem `node_modules`).
-
-```bash
-# Na pasta do backend
-docker compose up -d --build
-```
-
-### Variáveis de produção
-
-Use os valores da seção **Variáveis de ambiente — Produção** acima. Defina-as antes do `docker compose build` — `NEXT_PUBLIC_WS_URL` é embutida em build time e mudá-la depois exige rebuild.
-
-### Reverse proxy
-
-Em produção real, coloque Nginx / Caddy / Traefik na frente para terminar TLS e rotear `/api/*` e `/ws/*` para o backend e o restante para o frontend. Exemplo no README do backend.
+Ao abrir `http://localhost:3000`, o `proxy.ts` redireciona para `/auth` se não houver sessão e para `/dashboard` se houver.
 
 ---
 
 ## Autenticação
 
-A autenticação é gerenciada inteiramente pelo backend via cookies httpOnly (`tdl_access`, `tdl_refresh`). O frontend **nunca lê nem armazena tokens** — eles são enviados automaticamente pelo browser com cada request.
+Gerenciada inteiramente pelo backend via cookies httpOnly (`tdl_access`, `tdl_refresh`). O frontend **nunca lê nem armazena tokens** — o browser os envia automaticamente em cada request.
 
-### Fluxo
+### Fluxo de login
 
 ```
-1. Login → POST /api/trpc/auth.login (tRPC mutation)
-2. Backend seta cookies httpOnly no response
-3. AuthProvider chama trpc.auth.session.useQuery()
-4. createContext() repassa o header cookie bruto para GET /auth/session
-5. Backend valida o JWT e retorna SessionInfo
-6. useAuth() expõe { user, isLoading }
+Browser POST /api/auth?action=login
+    ↓  src/app/api/auth/route.ts
+    ↓  Backend POST /auth/login → SessionInfo + Set-Cookie
+    ↓  o route handler repassa Set-Cookie + body ao browser
+    ↓  AuthProvider rebusca trpc.auth.session
 ```
 
-### Provider de auth
+### Bridge REST (`/api/auth?action=...`)
+
+Endpoint único para fluxos que manipulam `Set-Cookie`. O cliente `authFetch` (em `lib/auth-client.ts`) normaliza os erros no mesmo formato consumido pelo resto do app.
+
+| `?action=` | Backend |
+|---|---|
+| `login` / `register` / `logout` | `/auth/...` |
+| `refresh` | `/auth/refresh` |
+| `verify-email` | `/auth/verify-email` |
+| `delete-account` | `/auth/account` |
+
+Fluxos sem mutação de cookie (forgot/reset password, reenvio de código, sessão) usam tRPC normal.
+
+### Refresh automático
+
+O `proxy.ts` detecta `tdl_refresh` sem `tdl_access`, chama `/auth/refresh` no backend e repassa os novos `Set-Cookie` — transparente para o usuário.
+
+### Provider
 
 ```tsx
-// Qualquer componente client
 const { user, isLoading } = useAuth();
 ```
 
-O `AuthProvider` usa `trpc.auth.session` com `staleTime: 5 min`. Ao fazer logout, a mutation invalida o cache e o provider atualiza para `user: null`.
+`AuthProvider` usa a query `trpc.auth.session` (cache compartilhado pelo QueryClient). Após login/logout, a navegação é feita com `window.location.href` para forçar um estado limpo.
+
+---
+
+## Proxy (Next.js 16)
+
+No Next 16 o `middleware.ts` passou a se chamar `proxy.ts` (export nomeado `proxy`). Responsabilidades:
+
+1. **Gate de autenticação** — sem `tdl_access`/`tdl_refresh`, redireciona para `/auth` (exceto rotas públicas).
+2. **Refresh automático** — se há `tdl_refresh` mas não `tdl_access`, chama `/auth/refresh` e repassa `Set-Cookie`.
+3. **Redirect inverso** — usuário autenticado tentando `/auth` vai para `/dashboard`.
+4. **Cabeçalhos de segurança** — aplica em toda resposta: `Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Strict-Transport-Security` e `Permissions-Policy`.
 
 ---
 
 ## tRPC
 
-### Contexto (`src/server/trpc/init.ts`)
+### Contexto (`server/trpc/init.ts`)
 
-A cada request tRPC, o `createContext` recebe o `Request` original do Next.js e repassa o header `cookie` bruto para o backend:
+A cada request, o `createContext` repassa o cookie bruto e chama `/auth/session` no backend para popular `ctx.user`:
 
 ```typescript
-export async function createContext({ req }: { req: Request }): Promise<Context> {
-  const cookieHeader = req.headers.get("cookie") ?? "";
-  if (!cookieHeader) return { user: null };
-
-  const session = await http.get<SessionInfo>("/auth/session", {
-    headers: { cookie: cookieHeader },
-  });
-  return { user: session.user };
+const fetch = createHttp(cookieHeader || undefined);
+try {
+  const session = await fetch.get<SessionInfo>("/auth/session");
+  return { user: session.user, fetch };
+} catch {
+  return { user: null, fetch };
 }
 ```
-
-Não há `cookies()` do `next/headers` — o header vai intacto do browser → Next.js → FastAPI.
 
 ### Procedures
 
 | Procedure | Requisito |
 |---|---|
-| `publicProcedure` | Qualquer request (user pode ser null) |
-| `protectedProcedure` | `ctx.user !== null` (retorna 401 caso contrário) |
+| `publicProcedure` | Qualquer request (`user` pode ser null) |
+| `protectedProcedure` | `ctx.user !== null` (senão 401) |
 
 ### Routers
 
-#### `auth`
-| Procedure | Tipo | Descrição |
-|---|---|---|
-| `session` | query | Sessão atual (`User \| null`) |
-| `login` | mutation | Login (email, password) |
-| `register` | mutation | Cadastro (email, username, password, full_name?) |
-| `logout` | mutation | Logout |
-| `forgotPassword` | mutation | Gera token de redefinição (TTL 1h) |
-| `resetPassword` | mutation | Redefine senha com token |
+**auth** — `session`, `forgotPassword`, `resetPassword`, `resendVerification`
+*(login, register, logout, verify-email e delete-account usam a bridge REST)*
 
-#### `tasks`
-| Procedure | Tipo | Descrição |
-|---|---|---|
-| `list` | query | Tarefas do usuário (`Task[]`) |
-| `listGroup` | query | Tarefas de um grupo (`Task[]`) |
-| `create` | mutation | Criar tarefa |
-| `update` | mutation | Atualizar tarefa |
-| `delete` | mutation | Deletar tarefa |
+**users** — `me`, `updateMe` (username / avatar_url / onboarded)
 
-#### `subtasks`
-| Procedure | Tipo | Descrição |
-|---|---|---|
-| `listByTask` | query | Subtarefas de uma tarefa (`Subtask[]`) |
-| `create` | mutation | Criar subtarefa |
-| `update` | mutation | Atualizar subtarefa |
-| `delete` | mutation | Deletar subtarefa |
+**tasks** — `list`, `listGroup`, `create`, `update`, `delete`
+*(em `update`, envie `assignee_username: ""` para desatribuir)*
 
-#### `categories`
-| Procedure | Tipo | Descrição |
-|---|---|---|
-| `list` | query | Categorias do usuário (`Category[]`) |
-| `listGroup` | query | Categorias de um grupo (`Category[]`) |
-| `create` | mutation | Criar categoria |
-| `update` | mutation | Atualizar categoria |
-| `delete` | mutation | Deletar categoria |
+**subtasks** — `listByTask`, `create`, `update`, `delete`
 
-#### `groups`
-| Procedure | Tipo | Descrição |
-|---|---|---|
-| `create` | mutation | Criar grupo (retorna `GroupCreated` com chave única) |
-| `join` | mutation | Solicitar entrada com chave |
-| `listMembers` | query | Membros do grupo (`GroupMember[]`) |
-| `listJoinRequests` | query | Pedidos pendentes (`JoinRequest[]`) |
-| `acceptRequest` | mutation | Aceitar pedido |
-| `rejectRequest` | mutation | Rejeitar pedido |
-| `removeMember` | mutation | Remover membro |
-| `leaveGroup` | mutation | Sair do grupo |
-| `deleteGroup` | mutation | Deletar grupo |
+**categories** — `list`, `listGroup`, `create`, `update`, `delete`
 
-#### `notifications`
-| Procedure | Tipo | Descrição |
-|---|---|---|
-| `list` | query | Notificações (`Notification[]`) |
-| `markRead` | mutation | Marcar notificação como lida |
-| `markAllRead` | mutation | Marcar todas como lidas |
+**groups** — `list`, `get`, `create`, `rename`, `join`, `listMembers`, `listJoinRequests`, `acceptRequest`, `rejectRequest`, `removeMember`, `promoteMember`, `leaveGroup`, `deleteGroup`
+
+**notifications** — `list`, `markRead`, `markAllRead`
 
 ---
 
-## Fluxo de autenticação
-
-Rota única `/auth` com 4 formulários animados via Framer Motion (`AnimatePresence` + `mode="wait"`). O usuário troca entre eles sem mudar de URL:
+## Papéis em grupos
 
 ```
-LoginForm  →  RegisterForm
-    ↓
-ForgotPasswordEmailForm  →  ResetPasswordForm
-    (recebe token)
+member  →  cria/edita tarefas e subtarefas
+admin   →  member + aceita/rejeita pedidos, remove members, promove member,
+           edita categorias e nome/descrição do grupo
+dono    →  admin (criador). Só ele deleta o grupo ou remove outro admin.
 ```
 
-Animação: o novo formulário entra pela direita (`x: 80 → 0`), o antigo sai pela esquerda (`x: 0 → -80`), com fade simultâneo. Controlado pelo componente `AuthShell` em `src/components/auth/AuthShell.tsx`.
-
-O `proxy.ts` redireciona não-autenticados para `/auth` e autenticados que tentam acessar `/auth` para `/dashboard`.
+O backend é a fonte de verdade das permissões: ações não autorizadas retornam `FORBIDDEN` e viram toast.
 
 ---
 
-## Kanban
+## Telas e navegação
 
-Tanto `/dashboard` quanto `/groups/[id]` renderizam o mesmo `<TaskBoard />`, diferindo apenas na fonte de dados:
+### `/auth`
 
-| Rota | Dados |
+Tela única com steps animados via Framer Motion (`AnimatePresence`):
+
+```
+login  →  register  →  verify-email
+  ↓
+forgot →  verify-reset  →  reset
+```
+
+A troca de step não muda a URL — é orquestrada pelo `AuthShell`.
+
+### Kanban (`/dashboard` e `/groups/[id]`)
+
+Ambas as rotas renderizam o mesmo `<TaskBoard />`, mudando apenas a fonte de dados:
+
+| Rota | Hooks |
 |---|---|
 | `/dashboard` | `useTasks()` + `useCategories()` |
-| `/groups/[id]` | `useGroupTasks(id)` + `useGroupCategories(id)` |
+| `/groups/[id]` | `useGroupTasks(slug)` + `useGroupCategories(slug)` |
 
-**Componentes:**
+Componentes:
+- **TaskBoard** — container horizontal, agrupa tarefas por categoria.
+- **CategoryColumn** — coluna com cor e contador; o botão "Tarefa" abre o modal de criação.
+- **TaskCard** — título, tags, status (dropdown), contador de subtarefas concluídas e avatar do responsável.
+- **TaskItemModal** — modal compartilhado por tarefa e subtarefa (detalhes + aba de subtarefas), com layout fullscreen no mobile. A criação de tarefa também usa um modal (`CreateTaskModal`), reaproveitando os mesmos campos.
+- **Datas** — os campos de início/prazo usam um seletor próprio no formato `dd/mm/aaaa` + hora (independente do locale do browser).
 
-- **`TaskBoard`** — container horizontal com scroll, agrupa tarefas por `category_id`
-- **`CategoryColumn`** — uma coluna por categoria, com header colorido e contador de tarefas
-- **`TaskCard`** — título, tags, contador `done/total` de subtarefas, avatar do assignee. Card inteiro é clicável
-- **`TaskModal`** — abre ao clicar no card, com 2 tabs:
-  - **Detalhes** — descrição + tags + checkbox para marcar a tarefa inteira como done
-  - **Subtarefas** — lista com checkboxes interativos + botão de deletar
-
-A subtarefa não tem sub-subtarefa (1 nível só), seguindo a regra do backend.
-
----
-
-## Formulários
-
-Todos os formulários usam **React Hook Form** com **Zod** via `zodResolver`:
-
-```tsx
-const schema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string().min(8, "Mínimo 8 caracteres"),
-});
-
-const { register, handleSubmit, formState: { errors } } = useForm({
-  resolver: zodResolver(schema),
-});
-```
-
-Validação acontece no cliente antes de qualquer chamada de rede. Erros de validação aparecem abaixo de cada campo. Erros do servidor aparecem como toast (Sonner).
-
----
-
-## Toasts e feedback
-
-`Sonner` é montado no `TrpcProvider` (posição `top-right`, `richColors`). Cada hook de mutation chama `toast.success` no sucesso e `toast.error(getErrorMessage(code))` no erro:
-
-```tsx
-return trpc.tasks.create.useMutation({
-  onSuccess: () => {
-    toast.success("Tarefa criada.");
-    utils.tasks.list.invalidate();
-  },
-  onError: (err) => toast.error(getErrorMessage(err.data?.code ?? "", err.message)),
-});
-```
-
-Sem `if (mutation.error) render(...)` espalhado pelos componentes.
-
----
-
-## TanStack Query Devtools
-
-Habilitado apenas em `NODE_ENV === "development"`. Permite ver queries cacheadas, estado de mutations e forçar refetch durante o desenvolvimento.
-
----
-
-## Skeletons (loading states)
-
-Todos os blocos com dados assíncronos têm skeleton via `<Skeleton />` (`src/components/ui/skeleton.tsx` — `animate-pulse` + bg cinza):
-
-- `DashboardClient` mostra skeletons no header enquanto carrega o user
-- `CategoryColumn` mostra 3 skeletons enquanto a query de tasks resolve
-- `TaskBoard` inteiro fica skeleton se loading inicial
-- `TaskModal` mostra skeletons na lista de subtarefas até a query terminar
+> Tarefas de grupo são separadas das tarefas individuais — o board pessoal não mistura tarefas de grupos.
 
 ---
 
 ## Notificações em tempo real
 
-O `NotificationService` abre uma conexão WebSocket com o backend e reconecta automaticamente a cada 5 segundos em caso de queda:
-
 ```
-browser → NEXT_PUBLIC_WS_URL/ws/notifications
+browser  ──►  ${NEXT_PUBLIC_WS_URL}/ws/notifications
 ```
 
-O `NotificationsProvider` expõe `{ events, unreadCount, isConnected, clearEvents }` via Context. A conexão só é aberta quando `userId` está disponível e encerrada ao fazer logout.
+O `NotificationsProvider` abre/fecha a conexão conforme `useAuth().user`. O `NotificationService` autentica via cookie (`tdl_access`) — sem token na URL — e, em caso de queda, tenta reconectar com backoff progressivo (5s → 15s → 30s → 60s) por um número limitado de tentativas; esgotadas, oferece um botão **Reconectar** no painel de notificações.
 
-### Reescrita de URL (proxy)
-
-O `next.config.ts` define rewrites para que o browser não acesse o backend diretamente:
-
-```
-/api-internal/*  →  ${API_URL}/*    (chamadas HTTP via fetch)
-/socket/*        →  ${API_URL}/*    (WebSocket upgrade)
-```
+Quando chega uma mensagem, o provider invalida `trpc.notifications.list` (o badge atualiza sozinho) e, em eventos de remoção/exclusão de grupo, invalida os caches do grupo e redireciona o usuário se ele estiver no board afetado.
 
 ---
 
-## Proxy (ex-Middleware)
+## Formulários e validação
 
-> **Next.js 16**: o arquivo de middleware foi renomeado para `proxy.ts` com export nomeado `proxy` (não `middleware` e não `default`).
-
-```typescript
-// proxy.ts
-export function proxy(request: NextRequest) { ... }
-export const config = { matcher: [...] }
-```
-
----
-
-## Tipos TypeScript (`src/types/api.ts`)
-
-Todos os tipos que espelham respostas do backend estão centralizados em um único arquivo:
-
-```typescript
-User, Task, TaskStatus, Tag, Category,
-Group, GroupCreated, GroupMember, GroupRole,
-JoinRequest, JoinRequestStatus,
-Notification, NotificationType,
-SessionInfo
-```
-
-Os routers tRPC usam esses tipos como parâmetro genérico do `http.get<T>()` para que o TanStack Query infira os tipos automaticamente nos hooks — sem necessidade de cast nos componentes.
+Todos usam **React Hook Form + Zod** via `zodResolver`. A regra de senha (`min(8)` + maiúscula/minúscula/dígito/símbolo) replica a do backend. A validação roda no cliente antes da chamada de rede; erros de campo aparecem inline e erros de servidor aparecem como toast.
 
 ---
 
 ## Tratamento de erros
 
-### `ApiError`
-
-Erros do backend são parseados por `parseApiError(res: Response)` usando type guard:
-
-```typescript
-const raw: unknown = await res.json();
-if (isApiErrorBody(raw)) {
-  code = raw.error?.code ?? code;
-}
-```
-
-### Retry automático
-
-O `QueryClient` não retenta requests que retornam `UNAUTHORIZED`:
-
-```typescript
-retry: (count, err) => {
-  if (err instanceof TRPCClientError && err.data?.code === "UNAUTHORIZED") return false;
-  return count < 2;
-}
-```
-
-### Mensagens de erro
-
-Traduzidas para português via `getErrorMessage(code)` em `src/errors/codes.ts`, espelhando o enum `ErrorCode` do backend.
+- **`parseApiError`** (`lib/api-error.ts`) — converte a resposta do backend em `ApiError`, preservando o `code`.
+- **`mapApiError`** (tRPC server) — converte `ApiError` em `TRPCError` mantendo o `code` em `data.code` (`400→BAD_REQUEST`, `401→UNAUTHORIZED`, `403→FORBIDDEN`, `404→NOT_FOUND`, `409→CONFLICT`, `429→TOO_MANY_REQUESTS`, `500→INTERNAL_SERVER_ERROR`).
+- **`getErrorMessage(code)`** (`errors/codes.ts`) — mensagens em PT-BR espelhando o enum do backend.
+- **`showError(err)`** (`errors/toast.ts`) — helper único de toast de erro usado pelas mutations.
+- **Retry** — o `QueryClient` não retenta queries que retornam `UNAUTHORIZED`.
+- **Páginas de erro** — `not-found.tsx`, `error.tsx` (boundary de rota) e `global-error.tsx` (boundary do layout raiz).
+- **Logs** — registrados no server via `lib/logger.ts`; o cliente só exibe toasts.
 
 ---
+
+## Tipos (`types/api.ts`)
+
+Tipos derivados de schemas Zod, espelhando as respostas do backend:
+
+```
+User, Task, TaskStatus, Tag, Category,
+Group, GroupCreated, GroupMember, GroupRole,
+JoinRequest, JoinRequestStatus,
+Notification, NotificationType, SessionInfo, Subtask,
+ForgotPasswordResponse
+```
+
+Os routers tRPC usam esses tipos como genérico de `http.get<T>()`, de forma que os hooks do TanStack Query inferem o tipo automaticamente.
+
+---
+
+## Produção com Docker
+
+O `docker-compose.yml` vive no repositório do **backend** e referencia este frontend via `context`. O Dockerfile usa `output: "standalone"` (imagem mínima): só `server.js` + `.next/static` + `public` vão para o runtime. O `.dockerignore` bloqueia `.env`, `node_modules`, `.next`, `.git` e afins. Plataformas que constroem do Dockerfile injetam `PORT` automaticamente.

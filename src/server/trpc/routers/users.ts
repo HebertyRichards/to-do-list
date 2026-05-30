@@ -10,6 +10,7 @@ export const usersRouter = router({
     .input(z.object({
       username: z.string().min(3).max(60).optional(),
       avatar_url: z.string().max(500).nullable().optional(),
+      onboarded: z.boolean().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       try {

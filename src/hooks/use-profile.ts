@@ -1,16 +1,27 @@
 "use client";
 
-import { toast } from "sonner";
 import { trpc } from "@/lib/trpc-client";
-import { getErrorMessage } from "@/errors/codes";
+import { showError } from "@/errors/toast";
 
 export function useUpdateProfile() {
   const utils = trpc.useUtils();
   return trpc.users.updateMe.useMutation({
-    onSuccess: () => {
-      toast.success("Perfil atualizado.");
-      utils.auth.session.invalidate();
+    onMutate: async (input) => {
+      await utils.auth.session.cancel();
+      const prev = utils.auth.session.getData();
+      if (prev) {
+        utils.auth.session.setData(undefined, { ...prev, ...input });
+      }
+      return { prev };
     },
-    onError: (err) => toast.error(getErrorMessage(err.data?.code ?? "", err.message)),
+    onSuccess: (updated) => {
+      utils.auth.session.setData(undefined, (curr) =>
+        curr ? { ...curr, ...updated } : curr,
+      );
+    },
+    onError: (err, _input, ctx) => {
+      if (ctx?.prev) utils.auth.session.setData(undefined, ctx.prev);
+      showError(err);
+    },
   });
 }

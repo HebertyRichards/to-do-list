@@ -103,6 +103,16 @@ export const groupsRouter = router({
       }
     }),
 
+  promoteMember: protectedProcedure
+    .input(z.object({ group_slug: z.string(), username: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        await ctx.fetch.post(`/groups/${input.group_slug}/members/${input.username}/promote`);
+      } catch (e) {
+        throw mapApiError(e);
+      }
+    }),
+
   leaveGroup: protectedProcedure
     .input(z.object({ group_slug: z.string() }))
     .mutation(async ({ input, ctx }) => {

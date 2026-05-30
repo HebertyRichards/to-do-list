@@ -1,32 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/providers/auth";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useUpdateProfile } from "@/hooks/use-profile";
 
 export default function OnboardingModal() {
   const [open, setOpen] = useState(true);
-  const { refetch } = useAuth();
+  const update = useUpdateProfile();
 
-  const handleClose = async () => {
-    try {
-      await fetch("/api-internal/users/me", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ onboarded: true }),
-      });
-      refetch();
-    } finally {
-      setOpen(false);
-    }
+  const finish = () => {
+    if (update.isPending) return;
+    update.mutate({ onboarded: true }, { onSuccess: () => setOpen(false) });
   };
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4">
-      <div className="w-full max-w-lg rounded-xl bg-surface p-6 shadow-2xl space-y-4">
-        <h2 className="text-xl font-bold">Bem-vindo ao To-Do List!</h2>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) finish(); }}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Bem-vindo ao To-Do List!</DialogTitle>
+          <DialogDescription>Um resumo rápido de como tudo funciona.</DialogDescription>
+        </DialogHeader>
 
         <div className="space-y-3 text-sm text-foreground-muted">
           <section>
@@ -50,13 +50,10 @@ export default function OnboardingModal() {
           </section>
         </div>
 
-        <button
-          onClick={handleClose}
-          className="w-full rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-        >
-          Entendi, vamos começar!
-        </button>
-      </div>
-    </div>
+        <Button onClick={finish} disabled={update.isPending} className="w-full">
+          {update.isPending ? "Salvando..." : "Entendi, vamos começar!"}
+        </Button>
+      </DialogContent>
+    </Dialog>
   );
 }

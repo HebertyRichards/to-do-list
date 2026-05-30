@@ -38,7 +38,6 @@ export default function DashboardClient() {
         categories={categories}
         tasks={tasks}
         isLoading={loadingTasks || loadingCategories}
-        subtaskCounts={{}}
       />
     </AppShell>
   );

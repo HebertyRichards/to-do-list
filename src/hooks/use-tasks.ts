@@ -1,13 +1,21 @@
 "use client";
 
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { getQueryKey } from "@trpc/react-query";
 import { trpc } from "@/lib/trpc-client";
-import { getErrorMessage } from "@/errors/codes";
+import { showError } from "@/errors/toast";
+import type { Task } from "@/types/api";
 
 export const useTasks = () => trpc.tasks.list.useQuery();
 
 export const useGroupTasks = (groupSlug: string) =>
   trpc.tasks.listGroup.useQuery({ group_slug: groupSlug }, { enabled: !!groupSlug });
+
+function invalidateAllTaskLists(utils: ReturnType<typeof trpc.useUtils>) {
+  utils.tasks.list.invalidate();
+  utils.tasks.listGroup.invalidate();
+}
 
 export function useCreateTask(groupSlug?: string) {
   const utils = trpc.useUtils();
@@ -20,17 +28,58 @@ export function useCreateTask(groupSlug?: string) {
         utils.tasks.list.invalidate();
       }
     },
-    onError: (err) => toast.error(getErrorMessage(err.data?.code ?? "", err.message)),
+    onError: showError,
   });
 }
 
 export function useUpdateTask() {
   const utils = trpc.useUtils();
+  const qc = useQueryClient();
+
+  const listKey = getQueryKey(trpc.tasks.list);
+  const listGroupKey = getQueryKey(trpc.tasks.listGroup);
+
   return trpc.tasks.update.useMutation({
-    onSuccess: () => {
-      utils.tasks.list.invalidate();
+    onMutate: async ({ slug, data }) => {
+      await qc.cancelQueries({ queryKey: listKey });
+      await qc.cancelQueries({ queryKey: listGroupKey });
+
+      const prev: [readonly unknown[], Task[] | undefined][] = [
+        ...qc.getQueriesData<Task[]>({ queryKey: listKey }),
+        ...qc.getQueriesData<Task[]>({ queryKey: listGroupKey }),
+      ];
+
+      const patch = (t: Task): Task =>
+        t.slug === slug
+          ? {
+              ...t,
+              ...(data.title !== undefined ? { title: data.title } : {}),
+              ...(data.description !== undefined ? { description: data.description } : {}),
+              ...(data.status !== undefined ? { status: data.status } : {}),
+              ...(data.start_date !== undefined ? { start_date: data.start_date } : {}),
+              ...(data.due_date !== undefined ? { due_date: data.due_date } : {}),
+              ...(data.assignee_username !== undefined
+                ? { assignee_username: data.assignee_username || null }
+                : {}),
+            }
+          : t;
+
+      qc.setQueriesData<Task[]>({ queryKey: listKey }, (old) => old?.map(patch));
+      qc.setQueriesData<Task[]>({ queryKey: listGroupKey }, (old) => old?.map(patch));
+
+      return { prev };
     },
-    onError: (err) => toast.error(getErrorMessage(err.data?.code ?? "", err.message)),
+    onError: (err, _vars, ctx) => {
+      if (ctx?.prev) {
+        for (const [key, data] of ctx.prev) {
+          qc.setQueryData(key, data);
+        }
+      }
+      showError(err);
+    },
+    onSettled: () => {
+      invalidateAllTaskLists(utils);
+    },
   });
 }
 
@@ -39,8 +88,8 @@ export function useDeleteTask() {
   return trpc.tasks.delete.useMutation({
     onSuccess: () => {
       toast.success("Tarefa removida.");
-      utils.tasks.list.invalidate();
+      invalidateAllTaskLists(utils);
     },
-    onError: (err) => toast.error(getErrorMessage(err.data?.code ?? "", err.message)),
+    onError: showError,
   });
 }

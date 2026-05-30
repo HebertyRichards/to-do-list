@@ -2,16 +2,7 @@
 
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc-client";
-import { getErrorMessage } from "@/errors/codes";
-
-type TRPCMutationError = {
-  data?: { code?: string | null } | null;
-  message: string;
-};
-
-function showError(err: TRPCMutationError): void {
-  toast.error(getErrorMessage(err.data?.code ?? "", err.message));
-}
+import { showError } from "@/errors/toast";
 
 export const useMyGroups = () => trpc.groups.list.useQuery();
 
@@ -75,14 +66,35 @@ export function useRemoveMember() {
   });
 }
 
-export const useLeaveGroup = () =>
-  trpc.groups.leaveGroup.useMutation({
-    onSuccess: () => toast.success("Voce saiu do grupo."),
+export function usePromoteMember() {
+  const utils = trpc.useUtils();
+  return trpc.groups.promoteMember.useMutation({
+    onSuccess: (_d, vars) => {
+      toast.success("Membro promovido a admin.");
+      utils.groups.listMembers.invalidate({ group_slug: vars.group_slug });
+    },
     onError: showError,
   });
+}
 
-export const useDeleteGroup = () =>
-  trpc.groups.deleteGroup.useMutation({
-    onSuccess: () => toast.success("Grupo deletado."),
+export function useLeaveGroup() {
+  const utils = trpc.useUtils();
+  return trpc.groups.leaveGroup.useMutation({
+    onSuccess: () => {
+      toast.success("Voce saiu do grupo.");
+      utils.groups.list.invalidate();
+    },
     onError: showError,
   });
+}
+
+export function useDeleteGroup() {
+  const utils = trpc.useUtils();
+  return trpc.groups.deleteGroup.useMutation({
+    onSuccess: () => {
+      toast.success("Grupo deletado.");
+      utils.groups.list.invalidate();
+    },
+    onError: showError,
+  });
+}

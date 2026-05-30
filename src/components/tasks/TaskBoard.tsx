@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { CategoryColumn } from "./CategoryColumn";
-import { TaskModal } from "./TaskModal";
+import { TaskItemModal } from "./TaskItemModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateCategory } from "@/hooks/use-categories";
 import { Plus } from "lucide-react";
 import type { Category, Task } from "@/types/api";
 
+const EMPTY_TASKS: Task[] = [];
+
 interface Props {
   categories: Category[];
   tasks: Task[];
   isLoading: boolean;
-  subtaskCounts: Record<string, { done: number; total: number }>;
   groupSlug?: string;
 }
 
@@ -76,15 +77,18 @@ function NewCategoryForm({ groupSlug, onDone }: { groupSlug?: string; onDone: ()
   );
 }
 
-export function TaskBoard({ categories, tasks, isLoading, subtaskCounts, groupSlug }: Props) {
+export function TaskBoard({ categories, tasks, isLoading, groupSlug }: Props) {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [addingCategory, setAddingCategory] = useState(false);
 
-  const tasksByCategory = tasks.reduce<Record<string, Task[]>>((acc, task) => {
-    if (!acc[task.category_slug]) acc[task.category_slug] = [];
-    acc[task.category_slug].push(task);
-    return acc;
-  }, {});
+  const tasksByCategory = useMemo(
+    () =>
+      tasks.reduce<Record<string, Task[]>>((acc, task) => {
+        (acc[task.category_slug] ??= []).push(task);
+        return acc;
+      }, {}),
+    [tasks],
+  );
 
   if (isLoading) {
     return (
@@ -107,9 +111,8 @@ export function TaskBoard({ categories, tasks, isLoading, subtaskCounts, groupSl
           <CategoryColumn
             key={cat.slug}
             category={cat}
-            tasks={tasksByCategory[cat.slug] ?? []}
+            tasks={tasksByCategory[cat.slug] ?? EMPTY_TASKS}
             isLoading={false}
-            subtaskCounts={subtaskCounts}
             onTaskClick={setSelectedTask}
             groupSlug={groupSlug}
           />
@@ -128,7 +131,12 @@ export function TaskBoard({ categories, tasks, isLoading, subtaskCounts, groupSl
         )}
       </div>
 
-      <TaskModal task={selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)} />
+      <TaskItemModal
+        kind="task"
+        item={selectedTask}
+        groupSlug={groupSlug}
+        onOpenChange={(open) => !open && setSelectedTask(null)}
+      />
     </>
   );
 }

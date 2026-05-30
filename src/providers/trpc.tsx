@@ -1,11 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { Toaster } from "sonner";
 import { trpc } from "@/lib/trpc-client";
+
+const ReactQueryDevtools =
+  process.env.NODE_ENV === "development"
+    ? dynamic(() =>
+      import("@tanstack/react-query-devtools").then((m) => m.ReactQueryDevtools),
+    )
+    : () => null;
 
 function isUnauthorized(err: unknown): boolean {
   if (!(err instanceof TRPCClientError)) return false;
@@ -42,7 +49,7 @@ export function TrpcProvider({ children }: { children: React.ReactNode }) {
         httpBatchLink({
           url: "/api/trpc",
           fetch(url, options) {
-            return globalThis.fetch(url, { ...options, credentials: "include" });
+            return globalThis.fetch(url, { ...options, credentials: "same-origin" });
           },
         }),
       ],
