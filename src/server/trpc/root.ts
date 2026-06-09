@@ -5,6 +5,7 @@ import { tasksRouter } from "./routers/tasks";
 import { subtasksRouter } from "./routers/subtasks";
 import { categoriesRouter } from "./routers/categories";
 import { groupsRouter } from "./routers/groups";
+import { habitsRouter } from "./routers/habits";
 import { notificationsRouter } from "./routers/notifications";
 import { usersRouter } from "./routers/users";
 
@@ -15,6 +16,7 @@ export const appRouter = router({
   subtasks: subtasksRouter,
   categories: categoriesRouter,
   groups: groupsRouter,
+  habits: habitsRouter,
   notifications: notificationsRouter,
 });
 

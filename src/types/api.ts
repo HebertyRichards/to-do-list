@@ -4,6 +4,7 @@ export const UserSchema = z.object({
   email: z.string().email(),
   username: z.string(),
   avatar_url: z.string().nullable(),
+  timezone: z.string(),
   onboarded: z.boolean(),
 });
 export type User = z.infer<typeof UserSchema>;
@@ -34,6 +35,33 @@ export const TaskSchema = z.object({
   subtask_total_count: z.number(),
 });
 export type Task = z.infer<typeof TaskSchema>;
+
+export const HabitStatusSchema = z.enum(["pending", "in_progress", "done"]);
+export type HabitStatus = z.infer<typeof HabitStatusSchema>;
+
+export const HabitSchema = z.object({
+  slug: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  every_day: z.boolean(),
+  days_of_week: z.array(z.number().int()),
+  scheduled_today: z.boolean(),
+  today_status: HabitStatusSchema.nullable(),
+  created_at: z.string(),
+});
+export type Habit = z.infer<typeof HabitSchema>;
+
+export const HabitStatsSchema = z.object({
+  date: z.string(),
+  daily_scheduled: z.number(),
+  daily_done: z.number(),
+  daily_percent: z.number(),
+  month: z.string(),
+  monthly_scheduled: z.number(),
+  monthly_done: z.number(),
+  monthly_percent: z.number(),
+});
+export type HabitStats = z.infer<typeof HabitStatsSchema>;
 
 export const CategorySchema = z.object({
   slug: z.string(),

@@ -1,6 +1,6 @@
 # To-Do List — Frontend
 
-Interface web para gerenciamento de tarefas individuais e em grupo, no estilo Kanban. Construída com **Next.js 16** (App Router), **tRPC** e **TanStack Query**. Consome a API FastAPI do backend através de uma camada tRPC server-side, com autenticação por cookies httpOnly e notificações em tempo real via WebSocket.
+Interface web para gerenciamento de tarefas individuais e em grupo (estilo Kanban) e hábitos diários recorrentes. Construída com **Next.js 16** (App Router), **tRPC** e **TanStack Query**. Consome a API FastAPI do backend através de uma camada tRPC server-side, com autenticação por cookies httpOnly e notificações em tempo real via WebSocket.
 
 ---
 
@@ -28,6 +28,7 @@ Interface web para gerenciamento de tarefas individuais e em grupo, no estilo Ka
 - **Grupos** — criação de grupos com chave de convite, aprovação/recusa de pedidos de entrada, papéis (membro/admin/dono), promoção de membros, remoção e saída.
 - **Kanban** — categorias como colunas; tarefas com título, descrição, tags, datas de início/prazo, status, responsável e subtarefas.
 - **Subtarefas** — um nível, com os mesmos campos da tarefa e contador de progresso no card.
+- **Hábitos diários (Diário)** — seção pessoal em `/diary` com hábitos recorrentes (todos os dias ou dias específicos da semana), status diário de 3 estados (pendente/em andamento/concluído) e cards de progresso diário e mensal.
 - **Notificações em tempo real** — via WebSocket, com badge de não lidas e painel no topo.
 - **Tema** — alternância claro/escuro/sistema.
 
@@ -58,6 +59,7 @@ Além disso, há **rewrites** diretos (`/api-internal`, `/socket`) para casos qu
 src/
 ├── app/                              # App Router
 │   ├── dashboard/                    # Board individual (page + DashboardClient)
+│   ├── diary/                        # Hábitos diários (page + DiaryClient)
 │   ├── groups/                       # Lista de grupos
 │   │   └── [id]/                     # Board do grupo (slug-based)
 │   ├── settings/                     # Página de configurações do perfil
@@ -75,13 +77,15 @@ src/
 │   ├── groups/                       # GroupMembersDialog
 │   ├── tasks/                        # TaskBoard, CategoryColumn, TaskCard,
 │   │   └── task-modal/               # ItemFields/FieldsBlock/SubtasksTab/CreateTaskModal/...
+│   ├── habits/                       # HabitCard, HabitStatsCards, constants,
+│   │   └── habit-modal/              # HabitFields/CreateHabitModal/EditHabitModal
 │   ├── layout/                       # AppShell + app-shell/ (Sidebar, Topbar, ...)
 │   └── ui/                           # shadcn/ui local (button, dialog, select, datetime-field, ...)
 ├── errors/
 │   ├── codes.ts                      # Enum ErrorCode + getErrorMessage() (PT-BR)
 │   └── toast.ts                      # showError() — toast de erro centralizado
 ├── hooks/                            # use-auth, use-tasks, use-subtasks, use-categories,
-│                                     # use-groups, use-notifications, use-profile
+│                                     # use-groups, use-habits, use-notifications, use-profile
 ├── lib/
 │   ├── api-error.ts                  # ApiError + parseApiError
 │   ├── auth-client.ts                # authFetch() p/ a bridge REST
@@ -95,7 +99,7 @@ src/
 ├── server/trpc/
 │   ├── init.ts                       # Context, procedures, mapApiError
 │   ├── root.ts                       # AppRouter
-│   └── routers/                      # auth, users, tasks, subtasks, categories, groups, notifications
+│   └── routers/                      # auth, users, tasks, subtasks, categories, groups, habits, notifications
 ├── services/
 │   ├── http.ts                       # Cliente fetch tipado
 │   └── notificationService.ts        # WebSocket + reconexão
@@ -225,6 +229,7 @@ try {
 *(login, register, logout, verify-email e delete-account usam a bridge REST)*
 
 **users** — `me`, `updateMe` (username / avatar_url / onboarded)
+*(o backend tem o campo `timezone`; ainda não enviado pelo cliente — ver nota em Diário)*
 
 **tasks** — `list`, `listGroup`, `create`, `update`, `delete`
 *(em `update`, envie `assignee_username: ""` para desatribuir)*
@@ -234,6 +239,9 @@ try {
 **categories** — `list`, `listGroup`, `create`, `update`, `delete`
 
 **groups** — `list`, `get`, `create`, `rename`, `join`, `listMembers`, `listJoinRequests`, `acceptRequest`, `rejectRequest`, `removeMember`, `promoteMember`, `leaveGroup`, `deleteGroup`
+
+**habits** — `list`, `listToday`, `stats`, `create`, `update`, `setStatus`, `delete`
+*(seção pessoal; `days_of_week` usa `0`=domingo … `6`=sábado, espelhando o backend)*
 
 **notifications** — `list`, `markRead`, `markAllRead`
 
@@ -286,6 +294,18 @@ Componentes:
 
 ---
 
+## Diário / Hábitos (`/diary`)
+
+Seção **pessoal** (não compartilhável) para hábitos recorrentes. `DiaryClient` alterna entre duas visões — **Hoje** (`useTodayHabits`, só os agendados para hoje) e **Todos** (`useHabits`) — e exibe `HabitStatsCards` (progresso diário e mensal via `useHabitStats`).
+
+- **HabitCard** — título, frequência (todos os dias ou dias da semana) e, na visão Hoje, um `select` de status de 3 estados (pendente/em andamento/concluído) colorido conforme o estado. Clicar no card abre a edição.
+- **CreateHabitModal / EditHabitModal** — reusam `HabitFields` (título, descrição, checkbox "todos os dias" e seletor de dias Dom–Sáb). A validação Zod (`habitFormSchema`) espelha o backend: exige ≥1 dia quando "todos os dias" está desmarcado.
+- **Progresso** — só `done` (concluído) conta nas porcentagens; "em andamento" é um estado próprio. Mudar a recorrência de um hábito recalcula a % do mês (o backend é a fonte de verdade).
+
+> **Fuso horário (pendente de integração):** o backend calcula "hoje" pelo `User.timezone` (default `UTC`). Para o dia virar no horário local do usuário, o cliente precisa enviar `timezone` (ex.: `Intl.DateTimeFormat().resolvedOptions().timeZone`) via `users.updateMe` — ainda não implementado.
+
+---
+
 ## Notificações em tempo real
 
 ```
@@ -324,6 +344,7 @@ Tipos derivados de schemas Zod, espelhando as respostas do backend:
 User, Task, TaskStatus, Tag, Category,
 Group, GroupCreated, GroupMember, GroupRole,
 JoinRequest, JoinRequestStatus,
+Habit, HabitStatus, HabitStats,
 Notification, NotificationType, SessionInfo, Subtask,
 ForgotPasswordResponse
 ```

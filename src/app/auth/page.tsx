@@ -1,5 +1,5 @@
 import { AuthShell } from "@/components/auth/AuthShell";
 
-export default function AuthPage() {
+export default async function AuthPage() {
   return <AuthShell />;
 }

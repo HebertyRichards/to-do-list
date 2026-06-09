@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Users, Bell, Settings, LogOut,
+  LayoutDashboard, Users, CalendarCheck, Bell, Settings, LogOut,
   ChevronLeft, ChevronRight, CheckCheck,
 } from "lucide-react";
 import { useAuth } from "@/providers/auth";
@@ -17,6 +17,7 @@ import { NotificationsList } from "./NotificationsList";
 const NAV_ITEMS = [
   { label: "To-Do List", href: "/dashboard", icon: LayoutDashboard },
   { label: "Grupos",     href: "/groups",    icon: Users },
+  { label: "Diário",     href: "/diary",     icon: CalendarCheck },
 ];
 
 interface Props {
