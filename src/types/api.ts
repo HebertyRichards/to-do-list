@@ -116,6 +116,7 @@ export const NotificationTypeSchema = z.enum([
   "subtask_assigned",
   "member_removed",
   "group_deleted",
+  "daily_reminder",
 ]);
 export type NotificationType = z.infer<typeof NotificationTypeSchema>;
 
@@ -128,6 +129,17 @@ export const NotificationSchema = z.object({
   created_at: z.string(),
 });
 export type Notification = z.infer<typeof NotificationSchema>;
+
+export const NotificationPageSchema = z.object({
+  items: z.array(NotificationSchema),
+  next_cursor: z.number().nullable(),
+});
+export type NotificationPage = z.infer<typeof NotificationPageSchema>;
+
+export const UnreadCountSchema = z.object({
+  count: z.number(),
+});
+export type UnreadCount = z.infer<typeof UnreadCountSchema>;
 
 export const SessionInfoSchema = z.object({
   user: UserSchema,

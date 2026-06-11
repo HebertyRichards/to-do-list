@@ -1,12 +1,24 @@
 import "server-only";
 import { z } from "zod";
 import { protectedProcedure, router, mapApiError } from "../init";
-import type { Notification } from "@/types/api";
+import type { NotificationPage, UnreadCount } from "@/types/api";
 
 export const notificationsRouter = router({
-  list: protectedProcedure.query(async ({ ctx }) => {
+  list: protectedProcedure
+    .input(z.object({ cursor: z.number().nullish() }).optional())
+    .query(async ({ input, ctx }) => {
+      try {
+        const cursor = input?.cursor;
+        const qs = cursor != null ? `?cursor=${cursor}` : "";
+        return await ctx.fetch.get<NotificationPage>(`/notifications${qs}`);
+      } catch (e) {
+        throw mapApiError(e);
+      }
+    }),
+
+  unreadCount: protectedProcedure.query(async ({ ctx }) => {
     try {
-      return await ctx.fetch.get<Notification[]>("/notifications");
+      return await ctx.fetch.get<UnreadCount>("/notifications/unread-count");
     } catch (e) {
       throw mapApiError(e);
     }

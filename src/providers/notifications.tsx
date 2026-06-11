@@ -55,6 +55,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     service.connect(
       (data) => {
         utils.notifications.list.invalidate();
+        utils.notifications.unreadCount.invalidate();
 
         const type = typeof data.type === "string" ? data.type : "";
         const groupSlug = typeof data.group_slug === "string" ? data.group_slug : null;
@@ -75,6 +76,55 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
           if (pathRef.current?.startsWith(`/groups/${groupSlug}`)) {
             router.replace("/groups");
           }
+        }
+
+        if (type === "join_request_created" && groupSlug) {
+          utils.groups.listJoinRequests.invalidate({ group_slug: groupSlug });
+          const username = typeof data.username === "string" ? data.username : "Alguém";
+          toast.info(`${username} quer entrar no seu grupo.`, {
+            action: {
+              label: "Ver",
+              onClick: () => router.push(`/groups/${groupSlug}`),
+            },
+          });
+        }
+
+        if (type === "join_request_accepted" && groupSlug) {
+          utils.groups.list.invalidate();
+          toast.success(groupName ? `Você entrou no grupo ${groupName}!` : "Você entrou no grupo!", {
+            action: {
+              label: "Abrir grupo",
+              onClick: () => router.push(`/groups/${groupSlug}`),
+            },
+          });
+        }
+
+        if (type === "task_assigned" || type === "subtask_assigned") {
+          const assignedBy = typeof data.assigned_by === "string" ? data.assigned_by : "Alguém";
+          const kind = type === "task_assigned" ? "tarefa" : "subtarefa";
+          if (groupSlug) {
+            utils.tasks.listGroup.invalidate({ group_slug: groupSlug });
+            const msg = groupName
+              ? `${assignedBy} atribuiu uma ${kind} a você no grupo ${groupName}.`
+              : `${assignedBy} atribuiu uma ${kind} a você.`;
+            toast.info(msg, {
+              action: {
+                label: "Abrir grupo",
+                onClick: () => router.push(`/groups/${groupSlug}`),
+              },
+            });
+          } else {
+            toast.info(`${assignedBy} atribuiu uma ${kind} a você.`);
+          }
+        }
+
+        if (type === "daily_reminder") {
+          toast.warning("Você ainda não fez nenhuma tarefa do diário hoje.", {
+            action: {
+              label: "Ver diário",
+              onClick: () => router.push("/diary"),
+            },
+          });
         }
       },
       (connected) => {

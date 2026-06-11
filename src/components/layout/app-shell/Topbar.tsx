@@ -6,16 +6,17 @@ import { ModeToggle } from "@/components/layout/ThemeToggle";
 import { useMarkAllRead } from "@/hooks/use-notifications";
 import { useNotificationsCtx } from "@/providers/notifications";
 import type { Notification } from "@/types/api";
-import { NotificationsList } from "./NotificationsList";
+import { NotificationsList, type NotificationsPagination } from "./NotificationsList";
 
 interface Props {
   title?: string;
   notifications: Notification[];
   loadingNotifs: boolean;
   unreadCount: number;
+  pagination?: NotificationsPagination;
 }
 
-export function Topbar({ title, notifications, loadingNotifs, unreadCount }: Props) {
+export function Topbar({ title, notifications, loadingNotifs, unreadCount, pagination }: Props) {
   const markAllRead = useMarkAllRead();
   const { gaveUp, reconnect } = useNotificationsCtx();
   const [open, setOpen] = useState(false);
@@ -94,6 +95,8 @@ export function Topbar({ title, notifications, loadingNotifs, unreadCount }: Pro
                   notifications={notifications}
                   loading={loadingNotifs}
                   emptyClassName="px-2 py-4 text-center text-xs italic text-foreground-subtle"
+                  onNavigate={() => setOpen(false)}
+                  pagination={pagination}
                 />
               </div>
             </div>

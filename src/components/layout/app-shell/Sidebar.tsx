@@ -12,7 +12,7 @@ import { useLogout } from "@/hooks/use-auth";
 import { useMarkAllRead } from "@/hooks/use-notifications";
 import { cn } from "@/utils/cn";
 import type { Notification } from "@/types/api";
-import { NotificationsList } from "./NotificationsList";
+import { NotificationsList, type NotificationsPagination } from "./NotificationsList";
 
 const NAV_ITEMS = [
   { label: "To-Do List", href: "/dashboard", icon: LayoutDashboard },
@@ -24,9 +24,10 @@ interface Props {
   notifications: Notification[];
   loadingNotifs: boolean;
   unreadCount: number;
+  pagination?: NotificationsPagination;
 }
 
-export function Sidebar({ notifications, loadingNotifs, unreadCount }: Props) {
+export function Sidebar({ notifications, loadingNotifs, unreadCount, pagination }: Props) {
   const pathname = usePathname();
   const { user } = useAuth();
   const logout = useLogout();
@@ -123,7 +124,12 @@ export function Sidebar({ notifications, loadingNotifs, unreadCount }: Props) {
               </button>
             )}
             <div className="flex flex-col gap-1 overflow-y-auto">
-              <NotificationsList notifications={notifications} loading={loadingNotifs} />
+              <NotificationsList
+                notifications={notifications}
+                loading={loadingNotifs}
+                onNavigate={() => setNotifsOpen(false)}
+                pagination={pagination}
+              />
             </div>
           </div>
         )}
