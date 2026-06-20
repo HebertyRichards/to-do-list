@@ -71,6 +71,47 @@ export function useDeleteAccount() {
   });
 }
 
+export function useRequestEmailChange() {
+  return useMutation({
+    mutationFn: (input: { new_email: string; password: string }) =>
+      authFetch("change-email-request", input),
+    onSuccess: () => toast.success("Enviamos um código para o novo email."),
+    onError: showError,
+  });
+}
+
+export function useConfirmEmailChange() {
+  const utils = trpc.useUtils();
+  return useMutation({
+    mutationFn: (input: { code: string }) => authFetch("change-email-confirm", input),
+    onSuccess: () => {
+      toast.success("Email atualizado.");
+      utils.auth.session.invalidate();
+    },
+    onError: showError,
+  });
+}
+
+export function useRequestPasswordChange() {
+  return useMutation({
+    mutationFn: (input: { current_password: string; new_password: string; confirm_new_password: string }) =>
+      authFetch("change-password-request", input),
+    onSuccess: () => toast.success("Enviamos um código para o seu email."),
+    onError: showError,
+  });
+}
+
+export function useConfirmPasswordChange() {
+  return useMutation({
+    mutationFn: (input: { code: string }) => authFetch("change-password-confirm", input),
+    onSuccess: () => {
+      toast.success("Senha alterada. Faça login novamente.");
+      window.location.href = "/auth";
+    },
+    onError: showError,
+  });
+}
+
 export function useForgotPassword() {
   return trpc.auth.forgotPassword.useMutation({
     onError: showError,

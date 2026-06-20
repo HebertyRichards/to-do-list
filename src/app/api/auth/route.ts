@@ -27,6 +27,10 @@ const ALLOWED: Record<string, ActionMap> = {
   refresh: { method: "POST", path: "/auth/refresh" },
   "verify-email": { method: "POST", path: "/auth/verify-email" },
   "delete-account": { method: "DELETE", path: "/auth/account" },
+  "change-email-request": { method: "POST", path: "/auth/change-email/request" },
+  "change-email-confirm": { method: "POST", path: "/auth/change-email/confirm" },
+  "change-password-request": { method: "POST", path: "/auth/change-password/request" },
+  "change-password-confirm": { method: "POST", path: "/auth/change-password/confirm" },
 };
 
 export async function POST(request: NextRequest) {
