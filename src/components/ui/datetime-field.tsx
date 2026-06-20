@@ -1,30 +1,19 @@
 "use client";
 
-import { useState } from "react";
 import { cn } from "@/utils/cn";
+import { DatePicker } from "@/components/ui/date-picker";
 
-function canonicalToParts(v: string): { date: string; time: string } {
-  const m = v.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-  if (!m) return { date: "", time: "" };
-  return { date: `${m[3] ?? ""}/${m[2] ?? ""}/${m[1] ?? ""}`, time: `${m[4] ?? ""}:${m[5] ?? ""}` };
+const selectClass =
+  "h-9 rounded border border-border bg-surface-muted px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring";
+
+// Valor canônico: "YYYY-MM-DDTHH:MM" (24h, sem AM/PM). Derivado direto do prop — sem estado local.
+function split(v: string): { date: string; hour: string; minute: string } {
+  const m = v.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
+  return { date: m?.[1] ?? "", hour: m?.[2] ?? "00", minute: m?.[3] ?? "00" };
 }
 
-function partsToCanonical(date: string, time: string): string {
-  const dm = date.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (!dm) return "";
-  const t = /^\d{2}:\d{2}$/.test(time) ? time : "00:00";
-  return `${dm[3] ?? ""}-${dm[2] ?? ""}-${dm[1] ?? ""}T${t}`;
-}
-
-function maskDate(raw: string): string {
-  const d = raw.replace(/\D/g, "").slice(0, 8);
-  if (d.length <= 2) return d;
-  if (d.length <= 4) return `${d.slice(0, 2)}/${d.slice(2)}`;
-  return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`;
-}
-
-const fieldClass =
-  "h-9 rounded border border-border bg-surface-muted px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring";
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")); // 00..23
+const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0")); // 00..59
 
 interface Props {
   value: string;
@@ -33,36 +22,44 @@ interface Props {
 }
 
 export function DateTimeField({ value, onChange, id }: Props) {
-  const initial = canonicalToParts(value);
-  const [dateStr, setDateStr] = useState(initial.date);
-  const [timeStr, setTimeStr] = useState(initial.time);
+  const { date, hour, minute } = split(value);
 
-  const emit = (date: string, time: string) => onChange(partsToCanonical(date, time));
+  const emit = (d: string, h: string, mi: string) => {
+    onChange(d ? `${d}T${h}:${mi}` : "");
+  };
 
   return (
-    <div className="flex gap-2">
-      <input
-        id={id}
-        inputMode="numeric"
-        placeholder="dd/mm/aaaa"
-        maxLength={10}
-        value={dateStr}
-        onChange={(e) => {
-          const masked = maskDate(e.target.value);
-          setDateStr(masked);
-          emit(masked, timeStr);
-        }}
-        className={cn(fieldClass, "flex-1")}
-      />
-      <input
-        type="time"
-        value={timeStr}
-        onChange={(e) => {
-          setTimeStr(e.target.value);
-          emit(dateStr, e.target.value);
-        }}
-        className={cn(fieldClass, "w-28")}
-      />
+    <div className="flex flex-wrap items-end gap-2">
+      <div className="min-w-[8rem] flex-1">
+        <DatePicker id={id} value={date} onChange={(d) => emit(d, hour, minute)} />
+      </div>
+      <div className="flex items-center gap-1">
+        <select
+          aria-label="Hora"
+          value={hour}
+          onChange={(e) => emit(date, e.target.value, minute)}
+          className={cn(selectClass, "w-15")}
+        >
+          {HOURS.map((h) => (
+            <option key={h} value={h}>
+              {h}
+            </option>
+          ))}
+        </select>
+        <span className="text-foreground-subtle">:</span>
+        <select
+          aria-label="Minuto"
+          value={minute}
+          onChange={(e) => emit(date, hour, e.target.value)}
+          className={cn(selectClass, "w-15")}
+        >
+          {MINUTES.map((mi) => (
+            <option key={mi} value={mi}>
+              {mi}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }
