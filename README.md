@@ -27,7 +27,7 @@ Interface web para gerenciamento de tarefas individuais e em grupo (estilo Kanba
 - **Onboarding** — modal de boas-vindas na primeira entrada.
 - **Tarefas individuais** — board pessoal em `/dashboard`, organizado por categorias.
 - **Grupos** — criação de grupos com chave de convite, aprovação/recusa de pedidos de entrada, papéis (membro/admin/dono), promoção de membros, remoção e saída.
-- **Kanban** — categorias como colunas; tarefas com título, descrição, tags, datas de início/prazo, status, responsável e subtarefas.
+- **Kanban** — categorias como colunas; tarefas com título, descrição, tags, datas de início/prazo, status, responsável e subtarefas. O status tem 3 estados (**Pendente** / **Em progresso** / **Finalizado**); tarefas finalizadas mostram um botão **Reabrir** (volta para Pendente) e só o criador/responsável podem finalizar ou reabrir. Cada tarefa/subtarefa pode ser marcada como **urgente** (sinalizador de prioridade) e exibe um selo vermelho **Atrasado** quando o prazo passou sem ter sido finalizada.
 - **Subtarefas** — um nível, com os mesmos campos da tarefa e contador de progresso no card.
 - **Hábitos diários (Diário)** — seção pessoal em `/diary` com hábitos recorrentes (todos os dias ou dias específicos da semana), status diário de 3 estados (pendente/em andamento/concluído) e cards de progresso diário e mensal.
 - **Notificações em tempo real** — via WebSocket, com badge de não lidas e painel no topo.
@@ -289,7 +289,7 @@ Ambas as rotas renderizam o mesmo `<TaskBoard />`, mudando apenas a fonte de dad
 Componentes:
 - **TaskBoard** — container horizontal, agrupa tarefas por categoria.
 - **CategoryColumn** — coluna com cor e contador; o botão "Tarefa" abre o modal de criação.
-- **TaskCard** — título, tags, status (dropdown), contador de subtarefas concluídas e avatar do responsável.
+- **TaskCard** — título (com ícone de bandeira quando **urgente**), tags, status, contador de subtarefas concluídas e avatar do responsável. O status aparece como `dropdown` (Pendente / Em progresso / Finalizado) enquanto a tarefa não está finalizada; finalizada, vira selo + botão **Reabrir** (apenas para criador/responsável). Quando atrasada, mostra um selo **Atrasado**.
 - **TaskItemModal** — modal compartilhado por tarefa e subtarefa (detalhes + aba de subtarefas), com layout fullscreen no mobile. A criação de tarefa também usa um modal (`CreateTaskModal`), reaproveitando os mesmos campos.
 - **Datas** — os campos de início/prazo usam um seletor próprio no formato `dd/mm/aaaa` + hora (independente do locale do browser).
 
