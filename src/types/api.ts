@@ -171,3 +171,15 @@ export const SubtaskSchema = z.object({
   assignee_avatar_url: z.string().nullable(),
 });
 export type Subtask = z.infer<typeof SubtaskSchema>;
+
+export const CommentSchema = z.object({
+  slug: z.string(),
+  body: z.string(),
+  author_username: z.string(),
+  author_avatar_url: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  can_edit: z.boolean(),
+  can_delete: z.boolean(),
+});
+export type Comment = z.infer<typeof CommentSchema>;

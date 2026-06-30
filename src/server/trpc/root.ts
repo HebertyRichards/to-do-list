@@ -3,6 +3,7 @@ import { router } from "./init";
 import { authRouter } from "./routers/auth";
 import { tasksRouter } from "./routers/tasks";
 import { subtasksRouter } from "./routers/subtasks";
+import { commentsRouter } from "./routers/comments";
 import { categoriesRouter } from "./routers/categories";
 import { groupsRouter } from "./routers/groups";
 import { habitsRouter } from "./routers/habits";
@@ -14,6 +15,7 @@ export const appRouter = router({
   users: usersRouter,
   tasks: tasksRouter,
   subtasks: subtasksRouter,
+  comments: commentsRouter,
   categories: categoriesRouter,
   groups: groupsRouter,
   habits: habitsRouter,
