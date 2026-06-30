@@ -8,6 +8,8 @@ export interface CommonItem {
   title: string;
   description: string | null;
   status: TaskStatus;
+  is_urgent: boolean;
+  is_overdue: boolean;
   start_date: string;
   due_date: string;
   created_at: string;
@@ -29,6 +31,7 @@ export interface UpdateData {
   start_date?: string;
   due_date?: string;
   status?: TaskStatus;
+  is_urgent?: boolean;
   assignee_username?: string;
 }
 
@@ -49,6 +52,7 @@ export const itemFormSchema = z
     startDate: z.string().min(1, "Data de início obrigatória"),
     dueDate: z.string().min(1, "Prazo obrigatório"),
     status: TaskStatusSchema,
+    isUrgent: z.boolean(),
     assignee: z.string(),
   })
   .refine((d) => !d.startDate || !d.dueDate || d.dueDate >= d.startDate, {

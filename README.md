@@ -23,6 +23,7 @@ Interface web para gerenciamento de tarefas individuais e em grupo (estilo Kanba
 ## Funcionalidades
 
 - **Autenticação completa** — cadastro com verificação de email por código, login, logout, recuperação e redefinição de senha, exclusão de conta.
+- **Configurações** (`/settings`) — edição de username/avatar e **troca de email e de senha**, ambas em dois passos com confirmação por **código enviado por email** (a senha atual é exigida antes de disparar o código).
 - **Onboarding** — modal de boas-vindas na primeira entrada.
 - **Tarefas individuais** — board pessoal em `/dashboard`, organizado por categorias.
 - **Grupos** — criação de grupos com chave de convite, aprovação/recusa de pedidos de entrada, papéis (membro/admin/dono), promoção de membros, remoção e saída.
@@ -62,7 +63,7 @@ src/
 │   ├── diary/                        # Hábitos diários (page + DiaryClient)
 │   ├── groups/                       # Lista de grupos
 │   │   └── [id]/                     # Board do grupo (slug-based)
-│   ├── settings/                     # Página de configurações do perfil
+│   ├── settings/                     # Página de configurações (perfil, email, senha, conta)
 │   ├── auth/                         # Tela única de autenticação
 │   ├── api/
 │   │   ├── auth/route.ts             # Bridge REST p/ cookies
@@ -172,8 +173,10 @@ Endpoint único para fluxos que manipulam `Set-Cookie`. O cliente `authFetch` (e
 | `refresh` | `/auth/refresh` |
 | `verify-email` | `/auth/verify-email` |
 | `delete-account` | `/auth/account` |
+| `change-email-request` / `change-email-confirm` | `/auth/change-email/...` |
+| `change-password-request` / `change-password-confirm` | `/auth/change-password/...` |
 
-Fluxos sem mutação de cookie (forgot/reset password, reenvio de código, sessão) usam tRPC normal.
+Fluxos sem mutação de cookie (forgot/reset password, reenvio de código, sessão) usam tRPC normal. A troca de email/senha passa pela bridge porque o `change-password-confirm` **limpa os cookies** no backend (logout forçado) — os demais passos reusam o mesmo caminho por serem ações de conta autenticadas.
 
 ### Refresh automático
 
@@ -185,7 +188,7 @@ O `proxy.ts` detecta `tdl_refresh` sem `tdl_access`, chama `/auth/refresh` no ba
 const { user, isLoading } = useAuth();
 ```
 
-`AuthProvider` usa a query `trpc.auth.session` (cache compartilhado pelo QueryClient). Após login/logout, a navegação é feita com `window.location.href` para forçar um estado limpo.
+`AuthProvider` usa a query `trpc.auth.session` (cache compartilhado pelo QueryClient). Em transições que trocam de sessão e exigem estado limpo (login, logout, troca de senha — que desloga), a navegação usa `window.location.href` para descartar todo o cache do cliente. Já a **troca de email** não é logout: ela apenas invalida a query `auth.session` (`utils.auth.session.invalidate()`), atualizando o email no lugar sem recarregar a página.
 
 ---
 

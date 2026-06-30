@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { Flag } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Select,
@@ -10,8 +11,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useUpdateTask } from "@/hooks/use-tasks";
+import { useAuth } from "@/providers/auth";
 import { formatCreatedAtLocal } from "@/utils/datetime";
-import { STATUS_OPTIONS, getStatusOption } from "@/utils/statuses";
+import { STATUS_OPTIONS, OVERDUE_BADGE, getStatusOption } from "@/utils/statuses";
 import { cn } from "@/utils/cn";
 import type { Task, TaskStatus } from "@/types/api";
 
@@ -22,10 +24,14 @@ interface Props {
 
 function TaskCardImpl({ task, onSelect }: Props) {
   const update = useUpdateTask();
+  const { user } = useAuth();
   const statusOpt = getStatusOption(task.status);
-  const isDone = task.status === "done" || task.status === "archived";
+  const isDone = task.status === "done";
   const doneCount = task.subtask_done_count;
   const totalCount = task.subtask_total_count;
+  const canComplete =
+    !!user &&
+    (user.username === task.creator_username || user.username === task.assignee_username);
 
   const handleStatusChange = (value: string) => {
     update.mutate({ slug: task.slug, data: { status: value as TaskStatus } });
@@ -47,8 +53,11 @@ function TaskCardImpl({ task, onSelect }: Props) {
         isDone && "opacity-60",
       )}
     >
-      <h3 className={cn("text-sm font-medium leading-tight", isDone && "line-through text-foreground-subtle")}>
-        {task.title}
+      <h3 className={cn("flex items-start gap-1.5 text-sm font-medium leading-tight", isDone && "line-through text-foreground-subtle")}>
+        {task.is_urgent && (
+          <Flag className="mt-0.5 h-3.5 w-3.5 shrink-0 fill-red-500 text-red-500" aria-label="Urgente" />
+        )}
+        <span>{task.title}</span>
       </h3>
 
       {task.tags.length > 0 && (
@@ -69,27 +78,58 @@ function TaskCardImpl({ task, onSelect }: Props) {
       </div>
 
       <div className="mt-2 flex items-center justify-between gap-2">
-        <Select value={task.status} onValueChange={handleStatusChange}>
-          <SelectTrigger
-            size="sm"
-            onClick={(e) => e.stopPropagation()}
-            className={cn(
-              "h-auto w-fit gap-1 rounded border-0 px-1.5 py-0.5 text-[11px] font-medium shadow-none focus-visible:ring-1",
-              statusOpt.className,
+        {isDone ? (
+          <div className="flex items-center gap-2">
+            <span className={cn("rounded px-1.5 py-0.5 text-[11px] font-medium", statusOpt.className)}>
+              {statusOpt.label}
+            </span>
+            {canComplete && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStatusChange("pending");
+                }}
+                disabled={update.isPending}
+                className="rounded px-1.5 py-0.5 text-[11px] font-medium text-foreground-muted hover:bg-surface-secondary hover:text-foreground transition-colors disabled:opacity-50"
+              >
+                Reabrir
+              </button>
             )}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
-            {STATUS_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          </div>
+        ) : (
+          <Select value={task.status} onValueChange={handleStatusChange}>
+            <SelectTrigger
+              size="sm"
+              onClick={(e) => e.stopPropagation()}
+              className={cn(
+                "h-auto w-fit gap-1 rounded border-0 px-1.5 py-0.5 text-[11px] font-medium shadow-none focus-visible:ring-1",
+                statusOpt.className,
+              )}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
+              {STATUS_OPTIONS.map((opt) => (
+                <SelectItem
+                  key={opt.value}
+                  value={opt.value}
+                  disabled={!canComplete && opt.value === "done"}
+                  className="text-xs"
+                >
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         <div className="flex items-center gap-2 shrink-0">
+          {task.is_overdue && (
+            <span className={cn("rounded px-1.5 py-0.5 text-[11px] font-medium", OVERDUE_BADGE.className)}>
+              {OVERDUE_BADGE.label}
+            </span>
+          )}
           {(doneCount > 0 || totalCount > 0) && (
             <span className="font-mono text-[11px] text-foreground-subtle">
               {doneCount}/{totalCount}

@@ -10,6 +10,7 @@ const SubtaskCreateInput = z.object({
   start_date: z.string(),
   due_date: z.string(),
   assignee_username: z.string().optional(),
+  is_urgent: z.boolean().optional(),
 });
 
 const SubtaskUpdateInput = z.object({
@@ -17,7 +18,8 @@ const SubtaskUpdateInput = z.object({
   description: z.string().optional(),
   start_date: z.string().optional(),
   due_date: z.string().optional(),
-  status: z.enum(["pending", "in_progress", "done", "archived"]).optional(),
+  status: z.enum(["pending", "in_progress", "done"]).optional(),
+  is_urgent: z.boolean().optional(),
   assignee_username: z.string().optional(),
 });
 

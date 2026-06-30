@@ -67,6 +67,7 @@ function CreateTaskForm({
       startDate: localNow(),
       dueDate: localNow(),
       status: "pending",
+      isUrgent: false,
       assignee: "",
     },
   });
@@ -81,6 +82,7 @@ function CreateTaskForm({
         category_slug: categorySlug,
         start_date: `${data.startDate}:00`,
         due_date: `${data.dueDate}:00`,
+        is_urgent: data.isUrgent,
         ...(groupSlug && data.assignee ? { assignee_username: data.assignee } : {}),
       },
       { onSuccess: () => onClose() },

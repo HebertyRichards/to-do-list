@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useSubtasks } from "@/hooks/use-subtasks";
 import { useGroupMembers } from "@/hooks/use-groups";
+import { useAuth } from "@/providers/auth";
 import { Trash2 } from "lucide-react";
 import { formatCreatedAtLocal, isoToLocalInput } from "@/utils/datetime";
 import type { Task, Subtask } from "@/types/api";
@@ -39,9 +40,14 @@ interface Props {
 
 export function ItemFields({ item, kind, groupSlug, update, remove, onClose }: Props) {
   const { data: members = [] } = useGroupMembers(groupSlug ?? "");
+  const { user } = useAuth();
   const { data: subtasks = [], isLoading: loadingSubtasks } = useSubtasks(
     kind === "task" ? item.slug : "",
   );
+
+  const canComplete =
+    !!user &&
+    (user.username === item.creator_username || user.username === item.assignee_username);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [openSubtask, setOpenSubtask] = useState<Subtask | null>(null);
@@ -60,6 +66,7 @@ export function ItemFields({ item, kind, groupSlug, update, remove, onClose }: P
       startDate: isoToLocalInput(item.start_date),
       dueDate: isoToLocalInput(item.due_date),
       status: item.status,
+      isUrgent: item.is_urgent,
       assignee: item.assignee_username ?? "",
     },
   });
@@ -79,6 +86,7 @@ export function ItemFields({ item, kind, groupSlug, update, remove, onClose }: P
       start_date: `${data.startDate}:00`,
       due_date: `${data.dueDate}:00`,
       status: data.status,
+      is_urgent: data.isUrgent,
       assignee_username: groupSlug ? data.assignee : undefined,
     });
     onClose();
@@ -107,6 +115,8 @@ export function ItemFields({ item, kind, groupSlug, update, remove, onClose }: P
       ids={ids}
       titleError={errors.title?.message}
       dueError={errors.dueDate?.message}
+      lockDone={!canComplete}
+      currentStatus={item.status}
     />
   );
 

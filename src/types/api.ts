@@ -9,7 +9,7 @@ export const UserSchema = z.object({
 });
 export type User = z.infer<typeof UserSchema>;
 
-export const TaskStatusSchema = z.enum(["pending", "in_progress", "done", "archived"]);
+export const TaskStatusSchema = z.enum(["pending", "in_progress", "done"]);
 export type TaskStatus = z.infer<typeof TaskStatusSchema>;
 
 export const TagSchema = z.object({
@@ -23,6 +23,8 @@ export const TaskSchema = z.object({
   title: z.string(),
   description: z.string().nullable(),
   status: TaskStatusSchema,
+  is_urgent: z.boolean(),
+  is_overdue: z.boolean(),
   start_date: z.string(),
   due_date: z.string(),
   created_at: z.string(),
@@ -159,6 +161,8 @@ export const SubtaskSchema = z.object({
   title: z.string(),
   description: z.string().nullable(),
   status: TaskStatusSchema,
+  is_urgent: z.boolean(),
+  is_overdue: z.boolean(),
   start_date: z.string(),
   due_date: z.string(),
   created_at: z.string(),

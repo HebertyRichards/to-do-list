@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Flag } from "lucide-react";
 import { useCreateSubtask } from "@/hooks/use-subtasks";
 import { DateTimeField } from "@/components/ui/datetime-field";
 import { localNow } from "@/utils/datetime";
@@ -16,6 +17,7 @@ export function NewSubtaskForm({ taskSlug, onDone }: Props) {
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState(localNow());
   const [dueDate, setDueDate] = useState(localNow());
+  const [isUrgent, setIsUrgent] = useState(false);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,8 +29,9 @@ export function NewSubtaskForm({ taskSlug, onDone }: Props) {
         description: description.trim() || undefined,
         start_date: `${startDate}:00`,
         due_date: `${dueDate}:00`,
+        is_urgent: isUrgent,
       },
-      { onSuccess: () => { setTitle(""); setDescription(""); onDone(); } },
+      { onSuccess: () => { setTitle(""); setDescription(""); setIsUrgent(false); onDone(); } },
     );
   };
 
@@ -59,6 +62,16 @@ export function NewSubtaskForm({ taskSlug, onDone }: Props) {
           <DateTimeField value={dueDate} onChange={setDueDate} />
         </div>
       </div>
+      <label className="flex cursor-pointer items-center gap-1.5 text-xs text-foreground-muted">
+        <input
+          type="checkbox"
+          className="h-3.5 w-3.5 accent-red-500"
+          checked={isUrgent}
+          onChange={(e) => setIsUrgent(e.target.checked)}
+        />
+        <Flag className="h-3.5 w-3.5 fill-red-500 text-red-500" />
+        Urgente
+      </label>
       <div className="flex gap-1.5">
         <button
           type="submit"

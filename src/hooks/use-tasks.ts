@@ -56,6 +56,7 @@ export function useUpdateTask() {
               ...(data.title !== undefined ? { title: data.title } : {}),
               ...(data.description !== undefined ? { description: data.description } : {}),
               ...(data.status !== undefined ? { status: data.status } : {}),
+              ...(data.is_urgent !== undefined ? { is_urgent: data.is_urgent } : {}),
               ...(data.start_date !== undefined ? { start_date: data.start_date } : {}),
               ...(data.due_date !== undefined ? { due_date: data.due_date } : {}),
               ...(data.assignee_username !== undefined

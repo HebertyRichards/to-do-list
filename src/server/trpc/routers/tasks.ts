@@ -10,6 +10,7 @@ const TaskCreateInput = z.object({
   due_date: z.string(),
   category_slug: z.string(),
   assignee_username: z.string().optional(),
+  is_urgent: z.boolean().optional(),
   tag_names: z.array(z.string()).default([]),
 });
 
@@ -18,7 +19,8 @@ const TaskUpdateInput = z.object({
   description: z.string().optional(),
   start_date: z.string().optional(),
   due_date: z.string().optional(),
-  status: z.enum(["pending", "in_progress", "done", "archived"]).optional(),
+  status: z.enum(["pending", "in_progress", "done"]).optional(),
+  is_urgent: z.boolean().optional(),
   category_slug: z.string().optional(),
   assignee_username: z.string().optional(),
   tag_names: z.array(z.string()).optional(),

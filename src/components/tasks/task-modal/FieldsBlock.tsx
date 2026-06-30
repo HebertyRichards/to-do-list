@@ -1,10 +1,12 @@
 "use client";
 
 import { Controller, type Control, type UseFormRegister } from "react-hook-form";
+import { Flag } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { DateTimeField } from "@/components/ui/datetime-field";
 import { STATUS_OPTIONS } from "@/utils/statuses";
 import type { ItemFormFields } from "@/types/task-modal";
+import type { TaskStatus } from "@/types/api";
 
 interface FieldsBlockProps {
   register: UseFormRegister<ItemFormFields>;
@@ -23,6 +25,8 @@ interface FieldsBlockProps {
   titleError?: string;
   dueError?: string;
   hideStatus?: boolean;
+  lockDone?: boolean;
+  currentStatus?: TaskStatus;
 }
 
 const fieldClass =
@@ -38,7 +42,11 @@ export function FieldsBlock({
   titleError,
   dueError,
   hideStatus,
+  lockDone,
+  currentStatus,
 }: FieldsBlockProps) {
+  const isStatusLocked = (value: TaskStatus) =>
+    !!lockDone && (value === "done" || currentStatus === "done");
   return (
     <>
       <div className="space-y-1.5">
@@ -93,9 +101,20 @@ export function FieldsBlock({
             <Label htmlFor={ids.statusId}>Status</Label>
             <select id={ids.statusId} className={fieldClass} {...register("status")}>
               {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <option
+                  key={opt.value}
+                  value={opt.value}
+                  disabled={isStatusLocked(opt.value)}
+                >
+                  {opt.label}
+                </option>
               ))}
             </select>
+            {lockDone && (
+              <p className="text-[11px] text-foreground-subtle">
+                Apenas o criador ou o responsável podem concluir ou reabrir.
+              </p>
+            )}
           </div>
         )}
 
@@ -125,6 +144,12 @@ export function FieldsBlock({
           </div>
         )}
       </div>
+
+      <label className="flex cursor-pointer items-center gap-2 text-sm">
+        <input type="checkbox" className="h-4 w-4 accent-red-500" {...register("isUrgent")} />
+        <Flag className="h-4 w-4 fill-red-500 text-red-500" />
+        <span>Marcar como urgente</span>
+      </label>
     </>
   );
 }
