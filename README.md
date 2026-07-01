@@ -29,6 +29,10 @@ Interface web para gerenciamento de tarefas individuais e em grupo (estilo Kanba
 - **Grupos** — criação de grupos com chave de convite, aprovação/recusa de pedidos de entrada, papéis (membro/admin/dono), promoção de membros, remoção e saída.
 - **Kanban** — categorias como colunas; tarefas com título, descrição, tags, datas de início/prazo, status, responsável e subtarefas. O status tem 3 estados (**Pendente** / **Em progresso** / **Finalizado**); tarefas finalizadas mostram um botão **Reabrir** (volta para Pendente) e só o criador/responsável podem finalizar ou reabrir. Cada tarefa/subtarefa pode ser marcada como **urgente** (sinalizador de prioridade) e exibe um selo vermelho **Atrasado** quando o prazo passou sem ter sido finalizada.
 - **Subtarefas** — um nível, com os mesmos campos da tarefa e contador de progresso no card.
+- **Categoria da tarefa** — a tarefa expõe `category_name`/`category_color` e pode ser **movida** para outra categoria (mesmo escopo) via `tasks.update` com `category_slug`.
+- **Ordenação / arrastar** *(camada de dados pronta; UI de drag-and-drop a implementar)* — cada tarefa tem `position`; listas vêm ordenadas por posição e o reposicionamento é enviado via `tasks.update` com `position`. Ao mover de categoria, a tarefa vai para o fim da coluna destino.
+- **Comentários e timeline de atividade** *(camada de dados pronta; UI a implementar)* — qualquer pessoa com acesso comenta em tarefas e subtarefas; além dos comentários, cada ação (criar, mudar status, entregar, mover de categoria, alocar responsável, etc.) vira um **evento** no log. O hook `useTimeline` traz o feed unificado (comentários + eventos, com durações já calculadas: quanto tempo ficou em cada status/categoria/com cada responsável).
+- **Busca, filtros e ordenação** *(camada de dados pronta; UI a implementar)* — `use-task-filters` filtra em memória por texto, status, tags, categoria, responsável, **atribuídas a mim**, urgente e atrasado, com **alternância entre tarefas e subtarefas** (a listagem por categoria só traz tarefas) e ordenação (posição/prazo/criação/título/prioridade).
 - **Hábitos diários (Diário)** — seção pessoal em `/diary` com hábitos recorrentes (todos os dias ou dias específicos da semana), status diário de 3 estados (pendente/em andamento/concluído) e cards de progresso diário e mensal.
 - **Notificações em tempo real** — via WebSocket, com badge de não lidas e painel no topo.
 - **Tema** — alternância claro/escuro/sistema.
@@ -86,7 +90,8 @@ src/
 │   ├── codes.ts                      # Enum ErrorCode + getErrorMessage() (PT-BR)
 │   └── toast.ts                      # showError() — toast de erro centralizado
 ├── hooks/                            # use-auth, use-tasks, use-subtasks, use-categories,
-│                                     # use-groups, use-habits, use-notifications, use-profile
+│                                     # use-comments, use-task-filters, use-groups, use-habits,
+│                                     # use-notifications, use-profile
 ├── lib/
 │   ├── api-error.ts                  # ApiError + parseApiError
 │   ├── auth-client.ts                # authFetch() p/ a bridge REST
@@ -100,7 +105,7 @@ src/
 ├── server/trpc/
 │   ├── init.ts                       # Context, procedures, mapApiError
 │   ├── root.ts                       # AppRouter
-│   └── routers/                      # auth, users, tasks, subtasks, categories, groups, habits, notifications
+│   └── routers/                      # auth, users, tasks, subtasks, comments, categories, groups, habits, notifications
 ├── services/
 │   ├── http.ts                       # Cliente fetch tipado
 │   └── notificationService.ts        # WebSocket + reconexão
@@ -235,9 +240,13 @@ try {
 *(o backend tem o campo `timezone`; ainda não enviado pelo cliente — ver nota em Diário)*
 
 **tasks** — `list`, `listGroup`, `create`, `update`, `delete`
-*(em `update`, envie `assignee_username: ""` para desatribuir)*
+*(em `update`, envie `assignee_username: ""` para desatribuir; `category_slug` para mover de categoria; `position` para reordenar)*
 
-**subtasks** — `listByTask`, `create`, `update`, `delete`
+**subtasks** — `list`, `listGroup`, `listByTask`, `create`, `update`, `delete`
+*(`list`/`listGroup` trazem todas as subtarefas do usuário/grupo — para a visão "só subtarefas")*
+
+**comments** — `list`, `timeline`, `create`, `update`, `delete`
+*(target-aware: `{ kind: "task" | "subtask", slug }`; `timeline` retorna o feed unificado de comentários + eventos de sistema)*
 
 **categories** — `list`, `listGroup`, `create`, `update`, `delete`
 
@@ -349,6 +358,7 @@ Group, GroupCreated, GroupMember, GroupRole,
 JoinRequest, JoinRequestStatus,
 Habit, HabitStatus, HabitStats,
 Notification, NotificationType, SessionInfo, Subtask,
+Comment, TimelineItem, ActivityType,
 ForgotPasswordResponse
 ```
 
