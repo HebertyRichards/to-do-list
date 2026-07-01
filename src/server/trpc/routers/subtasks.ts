@@ -24,6 +24,24 @@ const SubtaskUpdateInput = z.object({
 });
 
 export const subtasksRouter = router({
+  list: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      return await ctx.fetch.get<Subtask[]>("/subtasks");
+    } catch (e) {
+      throw mapApiError(e);
+    }
+  }),
+
+  listGroup: protectedProcedure
+    .input(z.object({ group_slug: z.string() }))
+    .query(async ({ input, ctx }) => {
+      try {
+        return await ctx.fetch.get<Subtask[]>(`/subtasks/group/${input.group_slug}`);
+      } catch (e) {
+        throw mapApiError(e);
+      }
+    }),
+
   listByTask: protectedProcedure
     .input(z.object({ task_slug: z.string() }))
     .query(async ({ input, ctx }) => {

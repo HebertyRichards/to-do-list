@@ -59,6 +59,8 @@ export function useUpdateTask() {
               ...(data.is_urgent !== undefined ? { is_urgent: data.is_urgent } : {}),
               ...(data.start_date !== undefined ? { start_date: data.start_date } : {}),
               ...(data.due_date !== undefined ? { due_date: data.due_date } : {}),
+              ...(data.category_slug !== undefined ? { category_slug: data.category_slug } : {}),
+              ...(data.position !== undefined ? { position: data.position } : {}),
               ...(data.assignee_username !== undefined
                 ? { assignee_username: data.assignee_username || null }
                 : {}),
@@ -80,6 +82,8 @@ export function useUpdateTask() {
     },
     onSettled: () => {
       invalidateAllTaskLists(utils);
+      // Toda edição de tarefa gera evento no log → refresca a timeline aberta.
+      utils.comments.timeline.invalidate();
     },
   });
 }

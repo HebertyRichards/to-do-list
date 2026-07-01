@@ -10,6 +10,13 @@ import type { Subtask } from "@/types/api";
 export const useSubtasks = (taskSlug: string) =>
   trpc.subtasks.listByTask.useQuery({ task_slug: taskSlug }, { enabled: !!taskSlug });
 
+// Subtarefas do usuário (individuais) — para a visão "só subtarefas".
+export const useMySubtasks = () => trpc.subtasks.list.useQuery();
+
+// Subtarefas de um grupo — para a visão "só subtarefas" dentro do grupo.
+export const useGroupSubtasks = (groupSlug: string) =>
+  trpc.subtasks.listGroup.useQuery({ group_slug: groupSlug }, { enabled: !!groupSlug });
+
 export function useCreateSubtask() {
   const utils = trpc.useUtils();
   return trpc.subtasks.create.useMutation({
@@ -66,6 +73,8 @@ export function useUpdateSubtask() {
       } else {
         utils.subtasks.listByTask.invalidate();
       }
+      // Edição de subtarefa gera evento no log → refresca a timeline aberta.
+      utils.comments.timeline.invalidate();
     },
   });
 }

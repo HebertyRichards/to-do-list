@@ -9,10 +9,17 @@ export type CommentTarget = { kind: "task" | "subtask"; slug: string };
 export const useComments = (target: CommentTarget) =>
   trpc.comments.list.useQuery(target, { enabled: !!target.slug });
 
+// Timeline unificada (comentários + eventos). Consome comments.timeline.
+export const useTimeline = (target: CommentTarget) =>
+  trpc.comments.timeline.useQuery(target, { enabled: !!target.slug });
+
 export function useCreateComment(target: CommentTarget) {
   const utils = trpc.useUtils();
   return trpc.comments.create.useMutation({
-    onSuccess: () => utils.comments.list.invalidate(target),
+    onSuccess: () => {
+      utils.comments.list.invalidate(target);
+      utils.comments.timeline.invalidate(target);
+    },
     onError: showError,
   });
 }
@@ -23,6 +30,7 @@ export function useUpdateComment(target: CommentTarget) {
     onSuccess: () => {
       toast.success("Comentário atualizado.");
       utils.comments.list.invalidate(target);
+      utils.comments.timeline.invalidate(target);
     },
     onError: showError,
   });
@@ -34,6 +42,7 @@ export function useDeleteComment(target: CommentTarget) {
     onSuccess: () => {
       toast.success("Comentário removido.");
       utils.comments.list.invalidate(target);
+      utils.comments.timeline.invalidate(target);
     },
     onError: showError,
   });

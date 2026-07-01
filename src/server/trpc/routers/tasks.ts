@@ -21,6 +21,7 @@ const TaskUpdateInput = z.object({
   due_date: z.string().optional(),
   status: z.enum(["pending", "in_progress", "done"]).optional(),
   is_urgent: z.boolean().optional(),
+  position: z.number().optional(),
   category_slug: z.string().optional(),
   assignee_username: z.string().optional(),
   tag_names: z.array(z.string()).optional(),

@@ -25,11 +25,14 @@ export const TaskSchema = z.object({
   status: TaskStatusSchema,
   is_urgent: z.boolean(),
   is_overdue: z.boolean(),
+  position: z.number(),
   start_date: z.string(),
   due_date: z.string(),
   created_at: z.string(),
   creator_username: z.string(),
   category_slug: z.string(),
+  category_name: z.string(),
+  category_color: z.string().nullable(),
   assignee_username: z.string().nullable(),
   assignee_avatar_url: z.string().nullable(),
   tags: z.array(TagSchema),
@@ -183,3 +186,40 @@ export const CommentSchema = z.object({
   can_delete: z.boolean(),
 });
 export type Comment = z.infer<typeof CommentSchema>;
+
+export const ActivityTypeSchema = z.enum([
+  "created",
+  "status_changed",
+  "delivered",
+  "reopened",
+  "category_moved",
+  "assignee_changed",
+  "urgent_changed",
+  "dates_changed",
+]);
+export type ActivityType = z.infer<typeof ActivityTypeSchema>;
+
+// Item unificado da timeline: comentário humano OU evento de sistema.
+export const TimelineItemSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("comment"),
+    slug: z.string(),
+    created_at: z.string(),
+    actor_username: z.string(),
+    actor_avatar_url: z.string().nullable(),
+    body: z.string(),
+    updated_at: z.string(),
+    can_edit: z.boolean(),
+    can_delete: z.boolean(),
+  }),
+  z.object({
+    kind: z.literal("activity"),
+    slug: z.string(),
+    created_at: z.string(),
+    actor_username: z.string(),
+    actor_avatar_url: z.string().nullable(),
+    type: ActivityTypeSchema,
+    payload: z.record(z.string(), z.unknown()),
+  }),
+]);
+export type TimelineItem = z.infer<typeof TimelineItemSchema>;

@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { protectedProcedure, router, mapApiError } from "../init";
-import type { Comment } from "@/types/api";
+import type { Comment, TimelineItem } from "@/types/api";
 
 const Target = z.object({
   kind: z.enum(["task", "subtask"]),
@@ -15,6 +15,17 @@ export const commentsRouter = router({
   list: protectedProcedure.input(Target).query(async ({ input, ctx }) => {
     try {
       return await ctx.fetch.get<Comment[]>(targetPath(input.kind, input.slug));
+    } catch (e) {
+      throw mapApiError(e);
+    }
+  }),
+
+  // Timeline unificada: comentários + eventos de sistema, ordenados por data.
+  timeline: protectedProcedure.input(Target).query(async ({ input, ctx }) => {
+    try {
+      return await ctx.fetch.get<TimelineItem[]>(
+        `${targetPath(input.kind, input.slug)}/timeline`,
+      );
     } catch (e) {
       throw mapApiError(e);
     }
