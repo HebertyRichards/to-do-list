@@ -33,6 +33,8 @@ export interface UpdateData {
   status?: TaskStatus;
   is_urgent?: boolean;
   assignee_username?: string;
+  category_slug?: string;
+  position?: number;
 }
 
 export interface UpdateAction {

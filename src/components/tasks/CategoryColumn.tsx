@@ -13,10 +13,32 @@ interface Props {
   tasks: Task[];
   isLoading: boolean;
   onTaskClick: (task: Task) => void;
+  onMoveTask: (slug: string, categorySlug: string, position: number) => void;
   groupSlug?: string;
 }
 
-function CategoryColumnImpl({ category, tasks, isLoading, onTaskClick, groupSlug }: Props) {
+// Nova posição (fracionária) ao soltar antes de `targetSlug` (ou no fim se null).
+// Insere "no meio" dos vizinhos sem renumerar os demais.
+function dropPosition(tasks: Task[], draggedSlug: string, targetSlug: string | null): number {
+  const list = tasks.filter((t) => t.slug !== draggedSlug);
+  const found = targetSlug ? list.findIndex((t) => t.slug === targetSlug) : -1;
+  const idx = found >= 0 ? found : list.length;
+  const before = idx > 0 ? list[idx - 1]?.position : undefined;
+  const after = idx < list.length ? list[idx]?.position : undefined;
+  if (before !== undefined && after !== undefined) return (before + after) / 2;
+  if (before !== undefined) return before + 1;
+  if (after !== undefined) return after - 1;
+  return 1;
+}
+
+function CategoryColumnImpl({
+  category,
+  tasks,
+  isLoading,
+  onTaskClick,
+  onMoveTask,
+  groupSlug,
+}: Props) {
   const [addingTask, setAddingTask] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [nameDraft, setNameDraft] = useState(category.name);
@@ -41,6 +63,14 @@ function CategoryColumnImpl({ category, tasks, isLoading, onTaskClick, groupSlug
   const handleDelete = () => {
     deleteCategory.mutate({ slug: category.slug });
     setConfirmDelete(false);
+  };
+
+  const onDrop = (targetSlug: string | null) => (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const slug = e.dataTransfer.getData("text/task-slug");
+    if (!slug) return;
+    onMoveTask(slug, category.slug, dropPosition(tasks, slug, targetSlug));
   };
 
   return (
@@ -110,11 +140,26 @@ function CategoryColumnImpl({ category, tasks, isLoading, onTaskClick, groupSlug
         </div>
       </header>
 
-      <div className="flex flex-col gap-2 overflow-y-auto">
+      <div
+        className="flex min-h-8 flex-col gap-2 overflow-y-auto"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={onDrop(null)}
+      >
         {isLoading
           ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)
           : tasks.map((task) => (
-              <TaskCard key={task.slug} task={task} onSelect={onTaskClick} />
+              <div
+                key={task.slug}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData("text/task-slug", task.slug);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={onDrop(task.slug)}
+              >
+                <TaskCard task={task} onSelect={onTaskClick} />
+              </div>
             ))}
 
         {!isLoading && tasks.length === 0 && (

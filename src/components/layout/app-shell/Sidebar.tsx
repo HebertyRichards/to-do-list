@@ -39,7 +39,7 @@ export function Sidebar({ notifications, loadingNotifs, unreadCount, pagination 
   return (
     <aside
       className={cn(
-        "flex flex-col border-r bg-surfacetext-foreground transition-[width] duration-200 ease-in-out shrink-0 overflow-hidden",
+        "flex flex-col border-r bg-surface text-foreground transition-[width] duration-200 ease-in-out shrink-0 overflow-hidden",
         collapsed ? "w-14" : "w-60",
       )}
     >

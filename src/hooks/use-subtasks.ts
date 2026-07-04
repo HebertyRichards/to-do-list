@@ -17,12 +17,24 @@ export const useMySubtasks = () => trpc.subtasks.list.useQuery();
 export const useGroupSubtasks = (groupSlug: string) =>
   trpc.subtasks.listGroup.useQuery({ group_slug: groupSlug }, { enabled: !!groupSlug });
 
+// As subtarefas aparecem em três queries (por tarefa, minhas e do grupo);
+// toda mutação precisa refletir nas três, senão a visão "Subtarefas" fica defasada.
+function invalidateSubtaskLists(utils: ReturnType<typeof trpc.useUtils>, taskSlug?: string) {
+  if (taskSlug) {
+    utils.subtasks.listByTask.invalidate({ task_slug: taskSlug });
+  } else {
+    utils.subtasks.listByTask.invalidate();
+  }
+  utils.subtasks.list.invalidate();
+  utils.subtasks.listGroup.invalidate();
+}
+
 export function useCreateSubtask() {
   const utils = trpc.useUtils();
   return trpc.subtasks.create.useMutation({
     onSuccess: (_data, vars) => {
       toast.success("Subtarefa criada.");
-      utils.subtasks.listByTask.invalidate({ task_slug: vars.task_slug });
+      invalidateSubtaskLists(utils, vars.task_slug);
     },
     onError: showError,
   });
@@ -31,7 +43,8 @@ export function useCreateSubtask() {
 export function useUpdateSubtask() {
   const utils = trpc.useUtils();
   const qc = useQueryClient();
-  const listKey = getQueryKey(trpc.subtasks.listByTask);
+  // Prefixo do router: casa listByTask, list e listGroup de uma vez.
+  const listKey = getQueryKey(trpc.subtasks);
 
   return trpc.subtasks.update.useMutation({
     onMutate: async ({ slug, data }) => {
@@ -68,11 +81,7 @@ export function useUpdateSubtask() {
       showError(err);
     },
     onSettled: (data) => {
-      if (data) {
-        utils.subtasks.listByTask.invalidate({ task_slug: data.task_slug });
-      } else {
-        utils.subtasks.listByTask.invalidate();
-      }
+      invalidateSubtaskLists(utils, data?.task_slug);
       // Edição de subtarefa gera evento no log → refresca a timeline aberta.
       utils.comments.timeline.invalidate();
     },
@@ -84,7 +93,7 @@ export function useDeleteSubtask(taskSlug: string) {
   return trpc.subtasks.delete.useMutation({
     onSuccess: () => {
       toast.success("Subtarefa removida.");
-      utils.subtasks.listByTask.invalidate({ task_slug: taskSlug });
+      invalidateSubtaskLists(utils, taskSlug);
     },
     onError: showError,
   });

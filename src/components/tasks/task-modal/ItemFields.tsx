@@ -11,12 +11,21 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useSubtasks } from "@/hooks/use-subtasks";
 import { useGroupMembers } from "@/hooks/use-groups";
+import { useCategories, useGroupCategories } from "@/hooks/use-categories";
 import { useAuth } from "@/providers/auth";
 import { Trash2 } from "lucide-react";
-import { formatCreatedAtLocal, isoToLocalInput } from "@/utils/datetime";
+import { formatCreatedAtLocal, isoToLocalInput, localInputToIso } from "@/utils/datetime";
 import type { Task, Subtask } from "@/types/api";
+import { TimelineTab } from "./TimelineTab";
 import {
   itemFormSchema,
   type CommonItem,
@@ -44,6 +53,16 @@ export function ItemFields({ item, kind, groupSlug, update, remove, onClose }: P
   const { data: subtasks = [], isLoading: loadingSubtasks } = useSubtasks(
     kind === "task" ? item.slug : "",
   );
+
+  // Categorias para o seletor de "mover tarefa" (só faz sentido em tarefa).
+  const userCategories = useCategories();
+  const groupCategories = useGroupCategories(groupSlug ?? "");
+  const categories = groupSlug ? groupCategories.data ?? [] : userCategories.data ?? [];
+  const currentCategory = "category_slug" in item ? (item as Task).category_slug : undefined;
+
+  const moveCategory = (slug: string) => {
+    if (slug !== currentCategory) update.mutate({ category_slug: slug });
+  };
 
   const canComplete =
     !!user &&
@@ -83,8 +102,8 @@ export function ItemFields({ item, kind, groupSlug, update, remove, onClose }: P
     update.mutate({
       title: data.title,
       description: data.description,
-      start_date: `${data.startDate}:00`,
-      due_date: `${data.dueDate}:00`,
+      start_date: localInputToIso(data.startDate),
+      due_date: localInputToIso(data.dueDate),
       status: data.status,
       is_urgent: data.isUrgent,
       assignee_username: groupSlug ? data.assignee : undefined,
@@ -138,10 +157,26 @@ export function ItemFields({ item, kind, groupSlug, update, remove, onClose }: P
           <TabsList>
             <TabsTrigger value="details">Detalhes</TabsTrigger>
             <TabsTrigger value="subtasks">Subtarefas ({subtasks.length})</TabsTrigger>
+            <TabsTrigger value="activity">Atividade</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details" className="space-y-3">
             {fields}
+            <div>
+              <label className="mb-0.5 block text-xs text-foreground-muted">Categoria</label>
+              <Select value={currentCategory} onValueChange={moveCategory}>
+                <SelectTrigger size="sm" className="w-full">
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((c) => (
+                    <SelectItem key={c.slug} value={c.slug} className="text-sm">
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             {taskTags.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {taskTags.map((t) => (
@@ -161,9 +196,18 @@ export function ItemFields({ item, kind, groupSlug, update, remove, onClose }: P
               onOpenSubtask={setOpenSubtask}
             />
           </TabsContent>
+
+          <TabsContent value="activity">
+            <TimelineTab target={{ kind: "task", slug: item.slug }} groupSlug={groupSlug} />
+          </TabsContent>
         </Tabs>
       ) : (
-        <div className="space-y-3">{fields}</div>
+        <div className="space-y-3">
+          {fields}
+          <div className="border-t border-border pt-3">
+            <TimelineTab target={{ kind: "subtask", slug: item.slug }} groupSlug={groupSlug} />
+          </div>
+        </div>
       )}
 
       <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">

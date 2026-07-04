@@ -5,14 +5,14 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: oklch(1 0 0);
+  --background: #e5e7eb;
   --foreground: oklch(0.145 0 0);
   --foreground-muted: #4b5563;
   --foreground-subtle: #9ca3af;
 
   --surface: #ffffff;
-  --surface-muted: #f9fafb;
-  --surface-secondary: #f3f4f6;
+  --surface-muted: #f3f4f6;
+  --surface-secondary: #e5e7eb;
 
   --border: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -48,7 +48,7 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
+  --sidebar: #ffffff;
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
@@ -59,14 +59,14 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: #111827;
   --foreground: oklch(0.985 0 0);
   --foreground-muted: #9ca3af;
-  --foreground-subtle: #4b5563;
+  --foreground-subtle: #6b7280;
 
-  --surface: #111827;
+  --surface: #374151;
   --surface-muted: #1f2937;
-  --surface-secondary: #1f2937;
+  --surface-secondary: #4b5563;
 
   --border: oklch(1 0 0 / 10%);
   --ring: oklch(0.556 0 0);
@@ -85,9 +85,9 @@
 
   --auth-gradient-from: #111827;
   --auth-gradient-to: #0b0f19;
-  --card: oklch(0.205 0 0);
+  --card: #374151;
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: #374151;
   --popover-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
@@ -101,7 +101,7 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
+  --sidebar: #374151;
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);

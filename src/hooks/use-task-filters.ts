@@ -11,7 +11,7 @@ export interface TaskFilters {
   kind: ItemKind; // "task" agrupa por categoria; "subtask" lista plana
   statuses: TaskStatus[]; // vazio = todos
   tags: string[]; // vazio = todos; casa se a tarefa tiver QUALQUER uma (só tasks)
-  category: string | null; // category_slug; null = todas (só tasks)
+  categories: string[]; // category_slugs; vazio = todas
   assignee: string | null; // username; null = todos
   assignedToMe: boolean; // atribuídas a mim (usa o username atual)
   urgentOnly: boolean;
@@ -24,7 +24,7 @@ export const DEFAULT_TASK_FILTERS: TaskFilters = {
   kind: "task",
   statuses: [],
   tags: [],
-  category: null,
+  categories: [],
   assignee: null,
   assignedToMe: false,
   urgentOnly: false,
@@ -52,7 +52,7 @@ export function useTaskFilters(initial: Partial<TaskFilters> = {}) {
       filters.q.trim() !== "" ||
       filters.statuses.length > 0 ||
       filters.tags.length > 0 ||
-      filters.category !== null ||
+      filters.categories.length > 0 ||
       filters.assignee !== null ||
       filters.assignedToMe ||
       filters.urgentOnly ||
@@ -121,7 +121,8 @@ export function useFilteredTasks(
       if (!matchesCommon(t, filters, currentUsername)) return false;
       if (filters.tags.length > 0 && !t.tags.some((tag) => filters.tags.includes(tag.name)))
         return false;
-      if (filters.category !== null && t.category_slug !== filters.category) return false;
+      if (filters.categories.length > 0 && !filters.categories.includes(t.category_slug))
+        return false;
       return true;
     });
     return result.sort((a, b) =>

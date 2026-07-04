@@ -4,10 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Users, LogOut, Trash2 } from "lucide-react";
 import { useGroupTasks } from "@/hooks/use-tasks";
+import { useGroupSubtasks } from "@/hooks/use-subtasks";
 import { useGroupCategories } from "@/hooks/use-categories";
 import { useGroup, useGroupMembers, useLeaveGroup, useDeleteGroup } from "@/hooks/use-groups";
 import { useAuth } from "@/providers/auth";
-import { TaskBoard } from "@/components/tasks/TaskBoard";
+import { BoardWorkspace } from "@/components/tasks/BoardWorkspace";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +29,7 @@ export default function GroupBoardClient({ groupSlug }: Props) {
   const router = useRouter();
   const { user } = useAuth();
   const { data: tasks = [], isLoading: loadingTasks } = useGroupTasks(groupSlug);
+  const { data: subtasks = [] } = useGroupSubtasks(groupSlug);
   const { data: categories = [], isLoading: loadingCategories } = useGroupCategories(groupSlug);
   const { data: group } = useGroup(groupSlug);
   const { data: members = [] } = useGroupMembers(groupSlug);
@@ -80,9 +82,10 @@ export default function GroupBoardClient({ groupSlug }: Props) {
           )}
         </Button>
       </div>
-      <TaskBoard
+      <BoardWorkspace
         categories={categories}
         tasks={tasks}
+        subtasks={subtasks}
         isLoading={loadingTasks || loadingCategories}
         groupSlug={groupSlug}
       />

@@ -5,6 +5,7 @@ import { CategoryColumn } from "./CategoryColumn";
 import { TaskItemModal } from "./TaskItemModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateCategory } from "@/hooks/use-categories";
+import { useUpdateTask } from "@/hooks/use-tasks";
 import { Plus } from "lucide-react";
 import type { Category, Task } from "@/types/api";
 
@@ -80,6 +81,7 @@ function NewCategoryForm({ groupSlug, onDone }: { groupSlug?: string; onDone: ()
 export function TaskBoard({ categories, tasks, isLoading, groupSlug }: Props) {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [addingCategory, setAddingCategory] = useState(false);
+  const update = useUpdateTask();
 
   const tasksByCategory = useMemo(
     () =>
@@ -89,6 +91,10 @@ export function TaskBoard({ categories, tasks, isLoading, groupSlug }: Props) {
       }, {}),
     [tasks],
   );
+
+  // Drop do drag-and-drop: move de categoria (se mudou) e reposiciona.
+  const moveTask = (slug: string, categorySlug: string, position: number) =>
+    update.mutate({ slug, data: { category_slug: categorySlug, position } });
 
   if (isLoading) {
     return (
@@ -114,6 +120,7 @@ export function TaskBoard({ categories, tasks, isLoading, groupSlug }: Props) {
             tasks={tasksByCategory[cat.slug] ?? EMPTY_TASKS}
             isLoading={false}
             onTaskClick={setSelectedTask}
+            onMoveTask={moveTask}
             groupSlug={groupSlug}
           />
         ))}

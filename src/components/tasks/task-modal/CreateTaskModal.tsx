@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useCreateTask } from "@/hooks/use-tasks";
 import { useGroupMembers } from "@/hooks/use-groups";
-import { localNow } from "@/utils/datetime";
+import { localNow, localInputToIso } from "@/utils/datetime";
 import { itemFormSchema, type ItemFormFields } from "@/types/task-modal";
 import { FieldsBlock } from "./FieldsBlock";
 import { FULLSCREEN_MOBILE } from "./constants";
@@ -80,8 +80,8 @@ function CreateTaskForm({
         title: data.title,
         description: data.description || undefined,
         category_slug: categorySlug,
-        start_date: `${data.startDate}:00`,
-        due_date: `${data.dueDate}:00`,
+        start_date: localInputToIso(data.startDate),
+        due_date: localInputToIso(data.dueDate),
         is_urgent: data.isUrgent,
         ...(groupSlug && data.assignee ? { assignee_username: data.assignee } : {}),
       },

@@ -4,16 +4,18 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth";
 import { useTasks } from "@/hooks/use-tasks";
+import { useMySubtasks } from "@/hooks/use-subtasks";
 import { useCategories } from "@/hooks/use-categories";
 import { AppShell } from "@/components/layout/AppShell";
 import OnboardingModal from "@/components/layout/OnboardingModal";
-import { TaskBoard } from "@/components/tasks/TaskBoard";
+import { BoardWorkspace } from "@/components/tasks/BoardWorkspace";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardClient() {
   const router = useRouter();
   const { user, isLoading: loadingUser } = useAuth();
   const { data: tasks = [], isLoading: loadingTasks } = useTasks();
+  const { data: subtasks = [] } = useMySubtasks();
   const { data: categories = [], isLoading: loadingCategories } = useCategories();
 
   useEffect(() => {
@@ -34,9 +36,10 @@ export default function DashboardClient() {
   return (
     <AppShell title="Minhas tarefas">
       {!user.onboarded && <OnboardingModal />}
-      <TaskBoard
+      <BoardWorkspace
         categories={categories}
         tasks={tasks}
+        subtasks={subtasks}
         isLoading={loadingTasks || loadingCategories}
       />
     </AppShell>

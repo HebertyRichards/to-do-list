@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Flag } from "lucide-react";
 import { useCreateSubtask } from "@/hooks/use-subtasks";
 import { DateTimeField } from "@/components/ui/datetime-field";
-import { localNow } from "@/utils/datetime";
+import { localNow, localInputToIso } from "@/utils/datetime";
 
 interface Props {
   taskSlug: string;
@@ -27,8 +27,8 @@ export function NewSubtaskForm({ taskSlug, onDone }: Props) {
         task_slug: taskSlug,
         title: title.trim(),
         description: description.trim() || undefined,
-        start_date: `${startDate}:00`,
-        due_date: `${dueDate}:00`,
+        start_date: localInputToIso(startDate),
+        due_date: localInputToIso(dueDate),
         is_urgent: isUrgent,
       },
       { onSuccess: () => { setTitle(""); setDescription(""); setIsUrgent(false); onDone(); } },
