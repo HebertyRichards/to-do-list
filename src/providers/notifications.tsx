@@ -54,12 +54,15 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
     service.connect(
       (data) => {
-        utils.notifications.list.invalidate();
-        utils.notifications.unreadCount.invalidate();
-
         const type = typeof data.type === "string" ? data.type : "";
         const groupSlug = typeof data.group_slug === "string" ? data.group_slug : null;
         const groupName = typeof data.group_name === "string" ? data.group_name : null;
+
+        // group_changed é efêmero (não persiste notificação): não busca a lista à toa.
+        if (type !== "group_changed") {
+          utils.notifications.list.invalidate();
+          utils.notifications.unreadCount.invalidate();
+        }
 
         if (EVICTION_TYPES.has(type) && groupSlug) {
           utils.groups.list.invalidate();
@@ -115,6 +118,28 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
             });
           } else {
             toast.info(`${assignedBy} atribuiu uma ${kind} a você.`);
+          }
+        }
+
+        // Sincronização silenciosa: outro membro mudou conteúdo do grupo.
+        // Invalida só as queries daquele grupo; ativas refazem o fetch na hora.
+        if (type === "group_changed" && groupSlug) {
+          const scope = typeof data.scope === "string" ? data.scope : "";
+          if (scope === "tasks") {
+            utils.tasks.listGroup.invalidate({ group_slug: groupSlug });
+            utils.subtasks.listGroup.invalidate({ group_slug: groupSlug });
+            utils.subtasks.listByTask.invalidate();
+          } else if (scope === "categories") {
+            utils.categories.listGroup.invalidate({ group_slug: groupSlug });
+            utils.tasks.listGroup.invalidate({ group_slug: groupSlug });
+          } else if (scope === "timeline") {
+            utils.comments.timeline.invalidate();
+          } else if (scope === "members") {
+            utils.groups.listMembers.invalidate({ group_slug: groupSlug });
+            utils.groups.get.invalidate({ group_slug: groupSlug });
+          } else if (scope === "group") {
+            utils.groups.get.invalidate({ group_slug: groupSlug });
+            utils.groups.list.invalidate();
           }
         }
 

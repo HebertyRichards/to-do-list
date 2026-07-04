@@ -9,15 +9,38 @@ export type Context = {
   fetch: Http;
 };
 
+// /auth/session validado a cada request tRPC fica caro; um TTL curto por cookie
+// derruba as chamadas repetidas sem risco real: os endpoints do FastAPI seguem
+// validando o cookie em toda operação de dados.
+const SESSION_TTL_MS = 30_000;
+const sessionCache = new Map<string, { user: User | null; expiresAt: number }>();
+
+async function resolveUser(cookieHeader: string, fetch: Http): Promise<User | null> {
+  if (!cookieHeader) return null;
+
+  const now = Date.now();
+  const hit = sessionCache.get(cookieHeader);
+  if (hit && hit.expiresAt > now) return hit.user;
+
+  if (sessionCache.size > 500) {
+    for (const [key, value] of sessionCache) {
+      if (value.expiresAt <= now) sessionCache.delete(key);
+    }
+  }
+
+  try {
+    const session = await fetch.get<SessionInfo>("/auth/session");
+    sessionCache.set(cookieHeader, { user: session.user, expiresAt: now + SESSION_TTL_MS });
+    return session.user;
+  } catch {
+    return null;
+  }
+}
+
 export async function createContext({ req }: { req: Request }): Promise<Context> {
   const cookieHeader = req.headers.get("cookie") ?? "";
   const fetch = createHttp(cookieHeader || undefined);
-  try {
-    const session = await fetch.get<SessionInfo>("/auth/session");
-    return { user: session.user, fetch };
-  } catch {
-    return { user: null, fetch };
-  }
+  return { user: await resolveUser(cookieHeader, fetch), fetch };
 }
 
 function mapApiError(e: unknown): TRPCError {
@@ -34,12 +57,20 @@ function mapApiError(e: unknown): TRPCError {
     return new TRPCError({
       code: codeMap[e.status] ?? "INTERNAL_SERVER_ERROR",
       message: e.message,
+      cause: e,
     });
   }
   return new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro inesperado." });
 }
 
-const t = initTRPC.context<Context>().create();
+const t = initTRPC.context<Context>().create({
+  // Expõe o código da API (ex.: NOT_GROUP_ADMIN) para o client usar as
+  // mensagens centralizadas de src/errors/codes.ts.
+  errorFormatter({ shape, error }) {
+    const appCode = error.cause instanceof ApiError ? error.cause.code : null;
+    return { ...shape, data: { ...shape.data, appCode } };
+  },
+});
 
 export const router = t.router;
 export const publicProcedure = t.procedure;

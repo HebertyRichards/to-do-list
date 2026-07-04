@@ -2,9 +2,15 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import {
+  MutationCache,
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import { trpc } from "@/lib/trpc-client";
 
 const ReactQueryDevtools =
@@ -14,18 +20,40 @@ const ReactQueryDevtools =
     )
     : () => null;
 
-function isUnauthorized(err: unknown): boolean {
-  if (!(err instanceof TRPCClientError)) return false;
-  return err.data?.code === "UNAUTHORIZED";
+function authErrorCode(err: unknown): "UNAUTHORIZED" | "FORBIDDEN" | null {
+  if (!(err instanceof TRPCClientError)) return null;
+  const code = err.data?.code;
+  return code === "UNAUTHORIZED" || code === "FORBIDDEN" ? code : null;
 }
 
-function makeQueryClient() {
+// Uma rajada de queries falhando gera 1 toast/redirect, não N.
+let lastAuthRedirect = 0;
+
+function handleAuthError(err: unknown, redirectToLogin: () => void) {
+  const code = authErrorCode(err);
+  if (!code || typeof window === "undefined") return;
+  if (window.location.pathname.startsWith("/auth")) return;
+  const now = Date.now();
+  if (now - lastAuthRedirect < 3000) return;
+  lastAuthRedirect = now;
+  toast.error(
+    code === "UNAUTHORIZED"
+      ? "Sessão expirada. Entre novamente."
+      : "Acesso negado. Entre novamente.",
+  );
+  redirectToLogin();
+}
+
+function makeQueryClient(redirectToLogin: () => void) {
+  const onError = (err: unknown) => handleAuthError(err, redirectToLogin);
   return new QueryClient({
+    queryCache: new QueryCache({ onError }),
+    mutationCache: new MutationCache({ onError }),
     defaultOptions: {
       queries: {
         staleTime: 60 * 1000,
         retry: (count, err: unknown) => {
-          if (isUnauthorized(err)) return false;
+          if (authErrorCode(err)) return false;
           return count < 2;
         },
       },
@@ -35,14 +63,17 @@ function makeQueryClient() {
 
 let browserQueryClient: QueryClient | undefined;
 
-function getQueryClient() {
-  if (typeof window === "undefined") return makeQueryClient();
-  if (!browserQueryClient) browserQueryClient = makeQueryClient();
+function getQueryClient(redirectToLogin: () => void) {
+  if (typeof window === "undefined") return makeQueryClient(redirectToLogin);
+  if (!browserQueryClient) browserQueryClient = makeQueryClient(redirectToLogin);
   return browserQueryClient;
 }
 
 export function TrpcProvider({ children }: { children: React.ReactNode }) {
-  const queryClient = getQueryClient();
+  // useRouter é estável no App Router; a navegação suave mantém o Toaster
+  // montado, então o toast sobrevive ao redirect para /auth.
+  const router = useRouter();
+  const queryClient = getQueryClient(() => router.replace("/auth"));
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [
