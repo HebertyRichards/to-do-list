@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Send, Pencil, Trash2, Check, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ function ActorAvatar({ username, url }: { username: string; url: string | null }
 }
 
 export function TimelineTab({ target, groupSlug }: Props) {
+  const t = useTranslations("timeline");
   const { data: items = [], isLoading } = useTimeline(target);
   const { data: members = [] } = useGroupMembers(groupSlug ?? "");
   const create = useCreateComment(target);
@@ -94,7 +96,7 @@ export function TimelineTab({ target, groupSlug }: Props) {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <p className="text-sm italic text-foreground-subtle">Sem atividade ainda</p>
+        <p className="text-sm italic text-foreground-subtle">{t("empty")}</p>
       ) : (
         <ul className="space-y-2">
           {items.map((item) => (
@@ -144,7 +146,7 @@ export function TimelineTab({ target, groupSlug }: Props) {
             onKeyDown={(e) => {
               if (e.key === "Escape") setMention(null);
             }}
-            placeholder="Escrever um comentário..."
+            placeholder={t("placeholder")}
             rows={2}
             maxLength={2000}
             className="min-h-9 w-full resize-none rounded border border-border bg-surface-muted px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
@@ -181,6 +183,8 @@ function TimelineRow({
   onDelete,
   pending,
 }: RowProps) {
+  const t = useTranslations("timeline");
+  const tRoot = useTranslations();
   // Evento do sistema: linha discreta com a frase derivada do payload.
   if (item.kind === "activity") {
     return (
@@ -188,7 +192,7 @@ function TimelineRow({
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-foreground-subtle/50" />
         <span className="min-w-0 flex-1 truncate">
           <span className="font-medium text-foreground-muted">@{item.actor_username}</span>{" "}
-          {describeActivity(item)}
+          {describeActivity(item, tRoot)}
         </span>
         <time className="shrink-0 tabular-nums">{formatCreatedAtLocal(item.created_at)}</time>
       </li>
@@ -205,7 +209,7 @@ function TimelineRow({
           <time className="text-foreground-subtle">{formatCreatedAtLocal(item.created_at)}</time>
           {item.updated_at !== item.created_at && (
             <span className="italic text-foreground-subtle">
-              (editado {formatCreatedAtLocal(item.updated_at)})
+              {t("edited", { date: formatCreatedAtLocal(item.updated_at) })}
             </span>
           )}
           <div className="ml-auto flex gap-1">
@@ -214,7 +218,7 @@ function TimelineRow({
                 type="button"
                 onClick={() => onStartEdit(item.slug, item.body)}
                 className="text-foreground-subtle hover:text-foreground-muted"
-                title="Editar"
+                title={t("edit")}
               >
                 <Pencil className="h-3 w-3" />
               </button>
@@ -225,7 +229,7 @@ function TimelineRow({
                 onClick={() => onDelete(item.slug)}
                 disabled={pending}
                 className="text-foreground-subtle hover:text-destructive disabled:opacity-50"
-                title="Excluir"
+                title={t("delete")}
               >
                 <Trash2 className="h-3 w-3" />
               </button>
@@ -247,7 +251,7 @@ function TimelineRow({
               onClick={onSaveEdit}
               disabled={pending || !draft.trim()}
               className="rounded p-1 text-green-600 hover:bg-surface-secondary disabled:opacity-50"
-              title="Salvar"
+              title={t("save")}
             >
               <Check className="h-4 w-4" />
             </button>
@@ -255,7 +259,7 @@ function TimelineRow({
               type="button"
               onClick={onCancelEdit}
               className="rounded p-1 text-foreground-subtle hover:bg-surface-secondary"
-              title="Cancelar"
+              title={t("cancel")}
             >
               <X className="h-4 w-4" />
             </button>

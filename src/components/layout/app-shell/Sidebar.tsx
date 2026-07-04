@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Users, CalendarCheck, Bell, Settings, LogOut,
   ChevronLeft, ChevronRight, CheckCheck,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/providers/auth";
 import { useLogout } from "@/hooks/use-auth";
 import { useMarkAllRead } from "@/hooks/use-notifications";
@@ -15,10 +16,10 @@ import type { Notification } from "@/types/api";
 import { NotificationsList, type NotificationsPagination } from "./NotificationsList";
 
 const NAV_ITEMS = [
-  { label: "To-Do List", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Grupos",     href: "/groups",    icon: Users },
-  { label: "Diário",     href: "/diary",     icon: CalendarCheck },
-];
+  { labelKey: "todo",   href: "/dashboard", icon: LayoutDashboard },
+  { labelKey: "groups", href: "/groups",    icon: Users },
+  { labelKey: "diary",  href: "/diary",     icon: CalendarCheck },
+] as const;
 
 interface Props {
   notifications: Notification[];
@@ -28,6 +29,8 @@ interface Props {
 }
 
 export function Sidebar({ notifications, loadingNotifs, unreadCount, pagination }: Props) {
+  const tNav = useTranslations("nav");
+  const tNotif = useTranslations("notifications");
   const pathname = usePathname();
   const { user } = useAuth();
   const logout = useLogout();
@@ -53,7 +56,7 @@ export function Sidebar({ notifications, loadingNotifs, unreadCount, pagination 
             "rounded-md p-1.5 text-foreground-muted hover:bg-surface-secondary hover:text-foreground transition-colors",
             collapsed && "mx-auto",
           )}
-          title={collapsed ? "Expandir" : "Recolher"}
+          title={collapsed ? tNav("expand") : tNav("collapse")}
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
@@ -62,11 +65,12 @@ export function Sidebar({ notifications, loadingNotifs, unreadCount, pagination 
       <nav className="flex flex-col gap-0.5 p-2">
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          const label = tNav(item.labelKey);
           return (
             <Link
               key={item.href}
               href={item.href}
-              title={collapsed ? item.label : undefined}
+              title={collapsed ? label : undefined}
               className={cn(
                 "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors",
                 active
@@ -76,7 +80,7 @@ export function Sidebar({ notifications, loadingNotifs, unreadCount, pagination 
               )}
             >
               <item.icon className="h-4 w-4 shrink-0" />
-              {!collapsed && <span className="truncate">{item.label}</span>}
+              {!collapsed && <span className="truncate">{label}</span>}
             </Link>
           );
         })}
@@ -87,7 +91,7 @@ export function Sidebar({ notifications, loadingNotifs, unreadCount, pagination 
       <div className="flex flex-col flex-1 overflow-hidden p-2">
         <button
           onClick={() => { setNotifsOpen((o) => !o); if (collapsed) setCollapsed(false); }}
-          title={collapsed ? "Notificações" : undefined}
+          title={collapsed ? tNotif("title") : undefined}
           className={cn(
             "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors text-foreground-muted hover:bg-surface-secondary hover:text-foreground",
             collapsed && "justify-center px-0",
@@ -103,7 +107,7 @@ export function Sidebar({ notifications, loadingNotifs, unreadCount, pagination 
           </div>
           {!collapsed && (
             <>
-              <span className="flex-1 truncate text-left">Notificações</span>
+              <span className="flex-1 truncate text-left">{tNotif("title")}</span>
               <ChevronRight
                 className={cn("h-3.5 w-3.5 shrink-0 transition-transform", notifsOpen && "rotate-90")}
               />
@@ -120,7 +124,7 @@ export function Sidebar({ notifications, loadingNotifs, unreadCount, pagination 
                 className="mb-1 flex items-center gap-1.5 rounded px-2 py-1 text-[11px] text-foreground-muted hover:text-foreground transition-colors"
               >
                 <CheckCheck className="h-3.5 w-3.5" />
-                Marcar todas como lidas
+                {tNotif("markAllRead")}
               </button>
             )}
             <div className="flex flex-col gap-1 overflow-y-auto">
@@ -138,7 +142,7 @@ export function Sidebar({ notifications, loadingNotifs, unreadCount, pagination 
       <div className="border-t border-border p-2 space-y-0.5">
         <Link
           href="/settings"
-          title={collapsed ? "Configurações" : undefined}
+          title={collapsed ? tNav("settings") : undefined}
           className={cn(
             "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors",
             pathname.startsWith("/settings")
@@ -148,7 +152,7 @@ export function Sidebar({ notifications, loadingNotifs, unreadCount, pagination 
           )}
         >
           <Settings className="h-4 w-4 shrink-0" />
-          {!collapsed && <span className="truncate">Configurações</span>}
+          {!collapsed && <span className="truncate">{tNav("settings")}</span>}
         </Link>
 
         {!collapsed && user && (
@@ -162,14 +166,14 @@ export function Sidebar({ notifications, loadingNotifs, unreadCount, pagination 
 
         <button
           onClick={() => logout.mutate()}
-          title={collapsed ? "Sair" : undefined}
+          title={collapsed ? tNav("logout") : undefined}
           className={cn(
             "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-destructive/80 hover:bg-destructive/10 hover:text-destructive transition-colors",
             collapsed && "justify-center px-0",
           )}
         >
           <LogOut className="h-4 w-4 shrink-0" />
-          {!collapsed && <span>Sair</span>}
+          {!collapsed && <span>{tNav("logout")}</span>}
         </button>
       </div>
     </aside>

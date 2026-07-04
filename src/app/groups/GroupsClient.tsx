@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,19 +15,14 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, Plus, Key, Copy, Check, ArrowRight, Pencil, X } from "lucide-react";
 import type { Group, GroupCreated } from "@/types/api";
+import { useTranslations } from "next-intl";
 
-const createSchema = z.object({
-  name: z.string().min(1, "Nome obrigatório").max(120, "Máximo 120 caracteres"),
-  description: z.string().max(500, "Máximo 500 caracteres").optional(),
-});
-const joinSchema = z.object({
-  key: z.string().min(1, "Chave obrigatória"),
-});
-
-type CreateFields = z.infer<typeof createSchema>;
-type JoinFields = z.infer<typeof joinSchema>;
+type CreateFields = { name: string; description?: string };
+type JoinFields = { key: string };
 
 function GroupCard({ group }: { group: Group }) {
+  const t = useTranslations("groups");
+  const tCommon = useTranslations("common");
   const rename = useRenameGroup();
   const [renaming, setRenaming] = useState(false);
   const [nameDraft, setNameDraft] = useState(group.name);
@@ -64,10 +59,10 @@ function GroupCard({ group }: { group: Group }) {
                 className="flex-1 rounded border border-ring bg-surface-muted px-2 py-1 text-sm font-semibold focus:outline-none"
                 onClick={(e) => e.preventDefault()}
               />
-              <button onClick={commitRename} className="text-success hover:text-success/80" title="Confirmar">
+              <button onClick={commitRename} className="text-success hover:text-success/80" title={tCommon("confirm")}>
                 <Check className="h-4 w-4" />
               </button>
-              <button onClick={() => { setNameDraft(group.name); setRenaming(false); }} className="text-foreground-muted" title="Cancelar">
+              <button onClick={() => { setNameDraft(group.name); setRenaming(false); }} className="text-foreground-muted" title={tCommon("cancel")}>
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -78,7 +73,7 @@ function GroupCard({ group }: { group: Group }) {
             <button
               onClick={(e) => { e.preventDefault(); setRenaming(true); setNameDraft(group.name); }}
               className="shrink-0 text-foreground-subtle hover:text-foreground-muted transition-colors p-1"
-              title="Renomear grupo"
+              title={t("rename")}
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>
@@ -87,19 +82,19 @@ function GroupCard({ group }: { group: Group }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-foreground-muted line-clamp-3">
-          {group.description || <span className="italic text-foreground-subtle">Sem descrição</span>}
+          {group.description || <span className="italic text-foreground-subtle">{t("noDescription")}</span>}
         </p>
         <div className="flex items-center justify-between pt-2 border-t border-border/50">
           <span className="flex items-center gap-1.5 text-xs text-foreground-muted">
             <Users className="h-3.5 w-3.5" />
-            {group.member_count} {group.member_count === 1 ? "membro" : "membros"}
+            {t("memberCount", { count: group.member_count })}
           </span>
           <Link
             href={`/groups/${group.slug}`}
             className="flex items-center gap-1 text-xs text-primary font-medium hover:underline"
             onClick={(e) => renaming && e.preventDefault()}
           >
-            Acessar <ArrowRight className="h-3 w-3" />
+            {t("access")} <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
       </CardContent>
@@ -108,6 +103,8 @@ function GroupCard({ group }: { group: Group }) {
 }
 
 export default function GroupsClient() {
+  const t = useTranslations("pages");
+  const tG = useTranslations("groups");
   const [activeTab, setActiveTab] = useState("my-groups");
   const [groupKey, setGroupKey] = useState<string | null>(null);
   const [groupSlug, setGroupSlug] = useState<string | null>(null);
@@ -117,6 +114,19 @@ export default function GroupsClient() {
   const create = useCreateGroup();
   const join = useJoinGroup();
 
+  const createSchema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(1, tG("nameRequired")).max(120, tG("nameMax")),
+        description: z.string().max(500, tG("descMax")).optional(),
+      }),
+    [tG],
+  );
+  const joinSchema = useMemo(
+    () => z.object({ key: z.string().min(1, tG("keyRequired")) }),
+    [tG],
+  );
+
   const createForm = useForm<CreateFields>({ resolver: zodResolver(createSchema) });
   const joinForm = useForm<JoinFields>({ resolver: zodResolver(joinSchema) });
 
@@ -125,7 +135,7 @@ export default function GroupsClient() {
       onSuccess: (res: GroupCreated) => {
         setGroupKey(res.key);
         setGroupSlug(res.slug);
-        toast.success("Grupo criado com sucesso!");
+        toast.success(tG("createdSuccess"));
         refetch();
       },
     });
@@ -135,7 +145,7 @@ export default function GroupsClient() {
     join.mutate(data, {
       onSuccess: () => {
         joinForm.reset();
-        toast.success("Solicitação de entrada enviada!");
+        toast.success(tG("toastJoinSent"));
       },
     });
   };
@@ -144,7 +154,7 @@ export default function GroupsClient() {
     if (!groupKey) return;
     navigator.clipboard.writeText(groupKey);
     setCopied(true);
-    toast.success("Chave copiada para a área de transferência!");
+    toast.success(tG("toastKeyCopied"));
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -161,14 +171,14 @@ export default function GroupsClient() {
   };
 
   return (
-    <AppShell title="Grupos">
+    <AppShell title={t("groups")}>
       <div className="max-w-6xl w-full mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <div className="flex items-center justify-between">
             <TabsList className="grid w-full max-w-md grid-cols-3">
-              <TabsTrigger value="my-groups">Meus Grupos</TabsTrigger>
-              <TabsTrigger value="create">Criar Grupo</TabsTrigger>
-              <TabsTrigger value="join">Entrar</TabsTrigger>
+              <TabsTrigger value="my-groups">{tG("myGroups")}</TabsTrigger>
+              <TabsTrigger value="create">{tG("createTab")}</TabsTrigger>
+              <TabsTrigger value="join">{tG("joinTab")}</TabsTrigger>
             </TabsList>
           </div>
 
@@ -194,19 +204,19 @@ export default function GroupsClient() {
                   <Users className="h-8 w-8 text-foreground-subtle" />
                 </div>
                 <div className="space-y-2 max-w-md">
-                  <h3 className="text-lg font-semibold">Nenhum grupo encontrado</h3>
+                  <h3 className="text-lg font-semibold">{tG("emptyTitle")}</h3>
                   <p className="text-sm text-foreground-muted">
-                    Você ainda não faz parte de nenhum grupo de tarefas. Crie um novo grupo para gerenciar tarefas com sua equipe, ou entre em um existente utilizando uma chave.
+                    {tG("emptyBody")}
                   </p>
                 </div>
                 <div className="flex gap-3 pt-2">
                   <Button onClick={() => setActiveTab("create")} variant="default">
                     <Plus className="h-4 w-4 mr-1" />
-                    Criar Grupo
+                    {tG("createTab")}
                   </Button>
                   <Button onClick={() => setActiveTab("join")} variant="secondary">
                     <Key className="h-4 w-4 mr-1" />
-                    Usar Chave
+                    {tG("useKey")}
                   </Button>
                 </div>
               </div>
@@ -222,7 +232,7 @@ export default function GroupsClient() {
           <TabsContent value="create" className="outline-none">
             <Card className="max-w-md mx-auto">
               <CardHeader>
-                <CardTitle>Criar Novo Grupo</CardTitle>
+                <CardTitle>{tG("createTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
                 {groupKey ? (
@@ -230,15 +240,15 @@ export default function GroupsClient() {
                     <div className="rounded-lg border border-success/30 bg-success/5 p-4 space-y-3">
                       <div className="flex items-center gap-2 text-success font-medium text-sm">
                         <Check className="h-4 w-4" />
-                        Grupo criado com sucesso!
+                        {tG("createdSuccess")}
                       </div>
                       <p className="text-xs text-foreground-muted">
-                        Guarde a chave de acesso abaixo. Você precisará dela para que outros usuários possam entrar no grupo. <strong className="text-foreground">Esta chave não será exibida novamente!</strong>
+                        {tG.rich("keyWarning", { strong: (c) => <strong className="text-foreground">{c}</strong> })}
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="block text-xs font-semibold text-foreground-muted">Chave de Acesso</label>
+                      <label className="block text-xs font-semibold text-foreground-muted">{tG("accessKey")}</label>
                       <div className="flex gap-2">
                         <code className="flex-1 block rounded border bg-surface-secondary px-3 py-2.5 text-xs font-mono break-all select-all">
                           {groupKey}
@@ -252,12 +262,12 @@ export default function GroupsClient() {
                     <div className="flex flex-col gap-2 pt-2">
                       <Button asChild className="w-full">
                         <Link href={`/groups/${groupSlug}`}>
-                          Acessar Quadro do Grupo
+                          {tG("goToBoard")}
                           <ArrowRight className="h-4 w-4 ml-1.5" />
                         </Link>
                       </Button>
                       <Button type="button" onClick={() => handleTabChange("create")} variant="ghost" className="w-full">
-                        Criar Outro Grupo
+                        {tG("createAnother")}
                       </Button>
                     </div>
                   </div>
@@ -267,10 +277,10 @@ export default function GroupsClient() {
                       <p className="text-sm text-destructive">{getErrorMessage(create.error.data?.code ?? "")}</p>
                     )}
                     <div className="space-y-1.5">
-                      <label className="block text-sm font-medium">Nome do Grupo</label>
+                      <label className="block text-sm font-medium">{tG("groupName")}</label>
                       <input
                         {...createForm.register("name")}
-                        placeholder="Ex: Time de Desenvolvimento"
+                        placeholder={tG("groupNamePlaceholder")}
                         className="w-full rounded border px-3 py-2 text-sm bg-surface-muted border-border focus:outline-none focus:ring-1 focus:ring-ring"
                       />
                       {createForm.formState.errors.name && (
@@ -279,10 +289,10 @@ export default function GroupsClient() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-sm font-medium">Descrição (opcional)</label>
+                      <label className="block text-sm font-medium">{tG("descriptionLabel")}</label>
                       <textarea
                         {...createForm.register("description")}
-                        placeholder="Descreva o propósito deste grupo..."
+                        placeholder={tG("descriptionPlaceholder")}
                         rows={3}
                         className="w-full rounded border px-3 py-2 text-sm bg-surface-muted border-border focus:outline-none focus:ring-1 focus:ring-ring resize-none"
                       />
@@ -292,7 +302,7 @@ export default function GroupsClient() {
                     </div>
 
                     <Button type="submit" disabled={create.isPending} className="w-full">
-                      {create.isPending ? "Criando..." : "Criar Grupo"}
+                      {create.isPending ? tG("creating") : tG("createTab")}
                     </Button>
                   </form>
                 )}
@@ -303,7 +313,7 @@ export default function GroupsClient() {
           <TabsContent value="join" className="outline-none">
             <Card className="max-w-md mx-auto">
               <CardHeader>
-                <CardTitle>Entrar em um Grupo</CardTitle>
+                <CardTitle>{tG("joinTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <form onSubmit={joinForm.handleSubmit(onJoinSubmit)} className="space-y-4">
@@ -313,14 +323,14 @@ export default function GroupsClient() {
                   {join.isSuccess && (
                     <div className="rounded-lg border border-success/30 bg-success/5 p-4 flex gap-2.5 text-sm text-success">
                       <Check className="h-5 w-5 shrink-0" />
-                      <span>Solicitação de entrada enviada! O administrador do grupo foi notificado para aprovar o seu acesso.</span>
+                      <span>{tG("joinSuccessLong")}</span>
                     </div>
                   )}
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-medium">Chave do Grupo</label>
+                    <label className="block text-sm font-medium">{tG("groupKey")}</label>
                     <input
                       {...joinForm.register("key")}
-                      placeholder="Cole a chave do grupo aqui"
+                      placeholder={tG("keyPlaceholder")}
                       className="w-full rounded border px-3 py-2 text-sm font-mono bg-surface-muted border-border focus:outline-none focus:ring-1 focus:ring-ring"
                     />
                     {joinForm.formState.errors.key && (
@@ -328,7 +338,7 @@ export default function GroupsClient() {
                     )}
                   </div>
                   <Button type="submit" disabled={join.isPending} className="w-full">
-                    {join.isPending ? "Enviando solicitação..." : "Solicitar Entrada"}
+                    {join.isPending ? tG("requesting") : tG("requestJoin")}
                   </Button>
                 </form>
               </CardContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Flag } from "lucide-react";
 import { useCreateSubtask } from "@/hooks/use-subtasks";
 import { DateTimeField } from "@/components/ui/datetime-field";
@@ -12,6 +13,8 @@ interface Props {
 }
 
 export function NewSubtaskForm({ taskSlug, onDone }: Props) {
+  const t = useTranslations("taskModal");
+  const tCommon = useTranslations("common");
   const create = useCreateSubtask();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -41,24 +44,24 @@ export function NewSubtaskForm({ taskSlug, onDone }: Props) {
         autoFocus
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Título da subtarefa"
+        placeholder={t("subtaskTitlePlaceholder")}
         maxLength={180}
         className="h-8 w-full rounded border border-border bg-surface-muted px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
       />
       <textarea
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        placeholder="Descrição (opcional)"
+        placeholder={t("descriptionOptional")}
         rows={2}
         className="w-full rounded border border-border bg-surface-muted px-2 py-1.5 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
       />
       <div className="grid grid-cols-1 gap-2 text-xs text-foreground-muted">
         <div>
-          <label className="mb-0.5 block">Início</label>
+          <label className="mb-0.5 block">{t("start")}</label>
           <DateTimeField value={startDate} onChange={setStartDate} />
         </div>
         <div>
-          <label className="mb-0.5 block">Prazo</label>
+          <label className="mb-0.5 block">{t("due")}</label>
           <DateTimeField value={dueDate} onChange={setDueDate} />
         </div>
       </div>
@@ -70,7 +73,7 @@ export function NewSubtaskForm({ taskSlug, onDone }: Props) {
           onChange={(e) => setIsUrgent(e.target.checked)}
         />
         <Flag className="h-3.5 w-3.5 fill-red-500 text-red-500" />
-        Urgente
+        {t("urgent")}
       </label>
       <div className="flex gap-1.5">
         <button
@@ -78,14 +81,14 @@ export function NewSubtaskForm({ taskSlug, onDone }: Props) {
           disabled={!title.trim() || create.isPending}
           className="flex-1 rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground disabled:opacity-50"
         >
-          {create.isPending ? "..." : "Criar"}
+          {create.isPending ? "..." : t("create")}
         </button>
         <button
           type="button"
           onClick={onDone}
           className="flex-1 rounded border px-2 py-1 text-xs text-foreground-muted"
         >
-          Cancelar
+          {tCommon("cancel")}
         </button>
       </div>
     </form>

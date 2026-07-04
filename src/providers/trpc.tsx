@@ -12,6 +12,7 @@ import {
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { Toaster, toast } from "sonner";
 import { trpc } from "@/lib/trpc-client";
+import { getErrorMessage } from "@/errors/codes";
 
 const ReactQueryDevtools =
   process.env.NODE_ENV === "development"
@@ -37,9 +38,7 @@ function handleAuthError(err: unknown, redirectToLogin: () => void) {
   if (now - lastAuthRedirect < 3000) return;
   lastAuthRedirect = now;
   toast.error(
-    code === "UNAUTHORIZED"
-      ? "Sessão expirada. Entre novamente."
-      : "Acesso negado. Entre novamente.",
+    code === "UNAUTHORIZED" ? getErrorMessage("SESSION_EXPIRED") : getErrorMessage("FORBIDDEN"),
   );
   redirectToLogin();
 }

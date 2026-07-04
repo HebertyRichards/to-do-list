@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Flag } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDisplayBadge } from "@/utils/statuses";
@@ -23,6 +24,8 @@ function SubtaskCard({ subtask, taskTitle, onSelect }: {
   taskTitle?: string;
   onSelect: (s: Subtask) => void;
 }) {
+  const tStatus = useTranslations("status");
+  const tBoard = useTranslations("board");
   const badge = getDisplayBadge(subtask);
   const isDone = subtask.status === "done";
   return (
@@ -49,12 +52,14 @@ function SubtaskCard({ subtask, taskTitle, onSelect }: {
       </h3>
 
       {taskTitle && (
-        <p className="mt-1 truncate text-[11px] text-foreground-subtle">em: {taskTitle}</p>
+        <p className="mt-1 truncate text-[11px] text-foreground-subtle">
+          {tBoard("inTask", { title: taskTitle })}
+        </p>
       )}
 
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${badge.className}`}>
-          {badge.label}
+          {tStatus(badge.key)}
         </span>
         <div className="flex shrink-0 items-center gap-2">
           <span className="text-[11px] text-foreground-subtle">
@@ -77,6 +82,7 @@ function SubtaskCard({ subtask, taskTitle, onSelect }: {
 }
 
 export function SubtaskListView({ subtasks, categories, tasks, isLoading, groupSlug }: Props) {
+  const tBoard = useTranslations("board");
   const [selected, setSelected] = useState<Subtask | null>(null);
 
   // Subtarefa não tem categoria própria: agrupa pela categoria da tarefa-mãe.
@@ -127,7 +133,7 @@ export function SubtaskListView({ subtasks, categories, tasks, isLoading, groupS
                 />
               ))}
               {items.length === 0 && (
-                <p className="px-1 text-sm italic text-foreground-subtle">Nenhuma subtarefa</p>
+                <p className="px-1 text-sm italic text-foreground-subtle">{tBoard("noSubtasks")}</p>
               )}
             </div>
           </div>
@@ -135,7 +141,7 @@ export function SubtaskListView({ subtasks, categories, tasks, isLoading, groupS
       })}
 
       {categories.length === 0 && (
-        <p className="text-sm italic text-foreground-subtle">Nenhuma categoria</p>
+        <p className="text-sm italic text-foreground-subtle">{tBoard("noCategories")}</p>
       )}
 
       <TaskItemModal

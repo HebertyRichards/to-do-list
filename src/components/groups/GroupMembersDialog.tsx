@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Shield, UserMinus, ArrowUp, Check, X } from "lucide-react";
 import {
   Dialog,
@@ -32,6 +33,7 @@ interface Props {
 }
 
 export function GroupMembersDialog({ open, onClose, groupSlug }: Props) {
+  const t = useTranslations("members");
   const { user } = useAuth();
   const { data: members = [], isLoading: loadingMembers } = useGroupMembers(groupSlug);
 
@@ -46,11 +48,9 @@ export function GroupMembersDialog({ open, onClose, groupSlug }: Props) {
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Membros do grupo</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>
-            {isAdmin
-              ? "Você é admin. Gerencie membros e pedidos de entrada."
-              : "Veja quem participa do grupo."}
+            {isAdmin ? t("adminSubtitle") : t("memberSubtitle")}
           </DialogDescription>
         </DialogHeader>
 
@@ -61,8 +61,8 @@ export function GroupMembersDialog({ open, onClose, groupSlug }: Props) {
             className="space-y-3"
           >
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="members">Membros</TabsTrigger>
-              <TabsTrigger value="requests">Pedidos pendentes</TabsTrigger>
+              <TabsTrigger value="members">{t("membersTab")}</TabsTrigger>
+              <TabsTrigger value="requests">{t("requestsTab")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="members">
@@ -108,6 +108,7 @@ function MembersList({
   isAdmin,
   groupSlug,
 }: MembersListProps) {
+  const t = useTranslations("members");
   const promote = usePromoteMember();
   const remove = useRemoveMember();
 
@@ -124,7 +125,7 @@ function MembersList({
   if (members.length === 0) {
     return (
       <p className="py-8 text-center text-sm italic text-foreground-subtle">
-        Sem membros.
+        {t("empty")}
       </p>
     );
   }
@@ -149,7 +150,7 @@ function MembersList({
                 </span>
                 {isMe && (
                   <span className="text-[10px] text-foreground-subtle">
-                    (você)
+                    {t("you")}
                   </span>
                 )}
                 {m.role === "admin" && (
@@ -159,7 +160,7 @@ function MembersList({
                 )}
               </div>
               <span className="text-[10px] text-foreground-subtle">
-                Entrou {formatCreatedAtLocal(m.joined_at)}
+                {t("joined", { date: formatCreatedAtLocal(m.joined_at) })}
               </span>
             </div>
 
@@ -169,7 +170,7 @@ function MembersList({
                   <Button
                     size="sm"
                     variant="ghost"
-                    title="Promover a admin"
+                    title={t("promote")}
                     disabled={promote.isPending}
                     onClick={() =>
                       promote.mutate({
@@ -184,7 +185,7 @@ function MembersList({
                 <Button
                   size="sm"
                   variant="ghost"
-                  title="Remover do grupo"
+                  title={t("remove")}
                   className="text-destructive hover:text-destructive"
                   disabled={remove.isPending}
                   onClick={() =>
@@ -206,6 +207,7 @@ function MembersList({
 }
 
 function RequestsList({ groupSlug }: { groupSlug: string }) {
+  const t = useTranslations("members");
   const { data: requests = [], isLoading } = useJoinRequests(groupSlug);
   const accept = useAcceptJoinRequest();
   const reject = useRejectJoinRequest();
@@ -223,7 +225,7 @@ function RequestsList({ groupSlug }: { groupSlug: string }) {
   if (requests.length === 0) {
     return (
       <p className="py-8 text-center text-sm italic text-foreground-subtle">
-        Nenhum pedido pendente.
+        {t("noRequests")}
       </p>
     );
   }
@@ -245,14 +247,14 @@ function RequestsList({ groupSlug }: { groupSlug: string }) {
             <div className="min-w-0 flex-1">
               <span className="truncate text-sm font-medium">{r.username}</span>
               <span className="block text-[10px] text-foreground-subtle">
-                Pediu em {formatCreatedAtLocal(r.created_at)}
+                {t("requestedAt", { date: formatCreatedAtLocal(r.created_at) })}
               </span>
             </div>
             <div className="flex shrink-0 gap-1">
               <Button
                 size="sm"
                 variant="ghost"
-                title="Aceitar"
+                title={t("accept")}
                 className="text-success hover:text-success"
                 disabled={acting}
                 onClick={() =>
@@ -267,7 +269,7 @@ function RequestsList({ groupSlug }: { groupSlug: string }) {
               <Button
                 size="sm"
                 variant="ghost"
-                title="Recusar"
+                title={t("reject")}
                 className="text-destructive hover:text-destructive"
                 disabled={acting}
                 onClick={() =>

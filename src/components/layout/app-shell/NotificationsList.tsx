@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Notification } from "@/types/api";
 import { NotificationItem } from "./NotificationItem";
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function NotificationsList({ notifications, loading, emptyClassName, onNavigate, pagination }: Props) {
+  const t = useTranslations("notifications");
   const sentinelRef = useRef<HTMLDivElement>(null);
   const hasMore = pagination?.hasMore ?? false;
   const loadingMore = pagination?.loadingMore ?? false;
@@ -50,7 +52,7 @@ export function NotificationsList({ notifications, loading, emptyClassName, onNa
   if (notifications.length === 0) {
     return (
       <p className={emptyClassName ?? "px-2 text-xs text-foreground-subtle italic"}>
-        Sem notificações
+        {t("empty")}
       </p>
     );
   }

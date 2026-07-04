@@ -2,6 +2,7 @@
 
 import { Controller, type Control, type UseFormRegister } from "react-hook-form";
 import { Flag } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Label } from "@/components/ui/label";
 import { DateTimeField } from "@/components/ui/datetime-field";
 import { STATUS_OPTIONS } from "@/utils/statuses";
@@ -45,12 +46,14 @@ export function FieldsBlock({
   lockDone,
   currentStatus,
 }: FieldsBlockProps) {
+  const tStatus = useTranslations("status");
+  const t = useTranslations("taskModal");
   const isStatusLocked = (value: TaskStatus) =>
     !!lockDone && (value === "done" || currentStatus === "done");
   return (
     <>
       <div className="space-y-1.5">
-        <Label htmlFor={ids.titleId}>Título</Label>
+        <Label htmlFor={ids.titleId}>{t("title")}</Label>
         <input
           id={ids.titleId}
           maxLength={180}
@@ -61,11 +64,11 @@ export function FieldsBlock({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor={ids.descId}>Descrição</Label>
+        <Label htmlFor={ids.descId}>{t("description")}</Label>
         <textarea
           id={ids.descId}
           rows={3}
-          placeholder="Descrição (opcional)"
+          placeholder={t("descriptionOptional")}
           className="w-full rounded border border-border bg-surface-muted px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
           {...register("description")}
         />
@@ -73,7 +76,7 @@ export function FieldsBlock({
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor={ids.startId}>Início</Label>
+          <Label htmlFor={ids.startId}>{t("start")}</Label>
           <Controller
             name="startDate"
             control={control}
@@ -83,7 +86,7 @@ export function FieldsBlock({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor={ids.dueId}>Prazo máximo</Label>
+          <Label htmlFor={ids.dueId}>{t("dueMax")}</Label>
           <Controller
             name="dueDate"
             control={control}
@@ -98,7 +101,7 @@ export function FieldsBlock({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {!hideStatus && (
           <div className="space-y-1.5">
-            <Label htmlFor={ids.statusId}>Status</Label>
+            <Label htmlFor={ids.statusId}>{t("status")}</Label>
             <select id={ids.statusId} className={fieldClass} {...register("status")}>
               {STATUS_OPTIONS.map((opt) => (
                 <option
@@ -106,13 +109,13 @@ export function FieldsBlock({
                   value={opt.value}
                   disabled={isStatusLocked(opt.value)}
                 >
-                  {opt.label}
+                  {tStatus(opt.key)}
                 </option>
               ))}
             </select>
             {lockDone && (
               <p className="text-[11px] text-foreground-subtle">
-                Apenas o criador ou o responsável podem concluir ou reabrir.
+                {t("lockDoneHint")}
               </p>
             )}
           </div>
@@ -120,7 +123,7 @@ export function FieldsBlock({
 
         {groupSlug && (
           <div className="space-y-1.5">
-            <Label htmlFor={ids.assigneeId}>Responsável</Label>
+            <Label htmlFor={ids.assigneeId}>{t("assignee")}</Label>
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-xs font-semibold uppercase text-foreground-muted">
                 {assignee ? assignee[0] : "—"}
@@ -130,7 +133,7 @@ export function FieldsBlock({
                 className="h-9 flex-1 rounded border border-border bg-surface-muted px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                 {...register("assignee")}
               >
-                <option value="">Sem responsável</option>
+                <option value="">{t("noAssignee")}</option>
                 {members.map((m) => (
                   <option key={m.username} value={m.username}>@{m.username}</option>
                 ))}
@@ -138,7 +141,7 @@ export function FieldsBlock({
             </div>
             {assignee && (
               <p className="text-[11px] text-foreground-subtle">
-                Responsável: <span className="font-medium text-foreground-muted">@{assignee}</span>
+                {t("assigneeIs")} <span className="font-medium text-foreground-muted">@{assignee}</span>
               </p>
             )}
           </div>
@@ -148,7 +151,7 @@ export function FieldsBlock({
       <label className="flex cursor-pointer items-center gap-2 text-sm">
         <input type="checkbox" className="h-4 w-4 accent-red-500" {...register("isUrgent")} />
         <Flag className="h-4 w-4 fill-red-500 text-red-500" />
-        <span>Marcar como urgente</span>
+        <span>{t("markUrgent")}</span>
       </label>
     </>
   );

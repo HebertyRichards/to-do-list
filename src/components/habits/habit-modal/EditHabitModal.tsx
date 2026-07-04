@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Trash2 } from "lucide-react";
@@ -16,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useUpdateHabit, useDeleteHabit } from "@/hooks/use-habits";
 import { formatCreatedAtLocal } from "@/utils/datetime";
 import type { Habit } from "@/types/api";
-import { habitFormSchema, type HabitFormFields, FULLSCREEN_MOBILE } from "../constants";
+import { makeHabitFormSchema, type HabitFormFields, FULLSCREEN_MOBILE } from "../constants";
 import { HabitFields } from "./HabitFields";
 
 interface Props {
@@ -35,6 +36,8 @@ export function EditHabitModal({ habit, onOpenChange }: Props) {
 }
 
 function EditHabitForm({ habit, onClose }: { habit: Habit; onClose: () => void }) {
+  const t = useTranslations("habits");
+  const tCommon = useTranslations("common");
   const update = useUpdateHabit();
   const remove = useDeleteHabit();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -45,7 +48,7 @@ function EditHabitForm({ habit, onClose }: { habit: Habit; onClose: () => void }
     handleSubmit,
     formState: { isDirty, errors },
   } = useForm<HabitFormFields>({
-    resolver: zodResolver(habitFormSchema),
+    resolver: zodResolver(useMemo(() => makeHabitFormSchema(t), [t])),
     defaultValues: {
       title: habit.title,
       description: habit.description ?? "",
@@ -85,9 +88,9 @@ function EditHabitForm({ habit, onClose }: { habit: Habit; onClose: () => void }
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <DialogHeader>
-        <DialogTitle>Editar hábito</DialogTitle>
+        <DialogTitle>{t("editTitle")}</DialogTitle>
         <DialogDescription className="text-[11px]">
-          Criado em {formatCreatedAtLocal(habit.created_at)}
+          {t("createdAt", { date: formatCreatedAtLocal(habit.created_at) })}
         </DialogDescription>
       </DialogHeader>
 
@@ -106,10 +109,10 @@ function EditHabitForm({ habit, onClose }: { habit: Habit; onClose: () => void }
           {confirmDelete ? (
             <>
               <Button type="button" variant="destructive" size="sm" onClick={handleDelete} disabled={pending}>
-                Confirmar exclusão
+                {t("confirmDelete")}
               </Button>
               <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmDelete(false)} disabled={pending}>
-                Cancelar
+                {tCommon("cancel")}
               </Button>
             </>
           ) : (
@@ -120,16 +123,16 @@ function EditHabitForm({ habit, onClose }: { habit: Habit; onClose: () => void }
               onClick={() => setConfirmDelete(true)}
               className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
-              <Trash2 className="mr-1.5 h-4 w-4" /> Excluir
+              <Trash2 className="mr-1.5 h-4 w-4" /> {t("delete")}
             </Button>
           )}
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={pending}>
-            Cancelar
+            {tCommon("cancel")}
           </Button>
           <Button type="submit" size="sm" disabled={pending}>
-            {update.isPending ? "Salvando..." : "Salvar"}
+            {update.isPending ? t("saving") : t("save")}
           </Button>
         </div>
       </DialogFooter>

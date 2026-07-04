@@ -1,6 +1,7 @@
 "use client";
 
 import { Controller, type Control, type UseFormRegister } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/utils/cn";
@@ -18,20 +19,21 @@ const fieldClass =
   "h-9 w-full rounded border border-border bg-surface-muted px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring";
 
 export function HabitFields({ register, control, ids, titleError, daysError }: Props) {
+  const t = useTranslations("habits");
   return (
     <>
       <div className="space-y-1.5">
-        <Label htmlFor={ids.titleId}>Título</Label>
+        <Label htmlFor={ids.titleId}>{t("title")}</Label>
         <input id={ids.titleId} maxLength={180} className={fieldClass} {...register("title")} />
         {titleError && <p className="text-xs text-destructive">{titleError}</p>}
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor={ids.descId}>Descrição</Label>
+        <Label htmlFor={ids.descId}>{t("description")}</Label>
         <textarea
           id={ids.descId}
           rows={3}
-          placeholder="Descrição (opcional)"
+          placeholder={t("descriptionOptional")}
           className="w-full rounded border border-border bg-surface-muted px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
           {...register("description")}
         />
@@ -56,26 +58,26 @@ export function HabitFields({ register, control, ids, titleError, daysError }: P
               };
               return (
                 <div className="space-y-2">
-                  <Label>Frequência</Label>
+                  <Label>{t("frequency")}</Label>
 
                   <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
                     <Checkbox
                       checked={everyDay.value}
                       onCheckedChange={(c) => everyDay.onChange(c === true)}
                     />
-                    <span>Todos os dias da semana</span>
+                    <span>{t("everyDayCheckbox")}</span>
                   </label>
 
                   <div className="flex flex-wrap gap-1.5">
                     {DAYS_OF_WEEK.map((d) => {
-                      const active = everyDay.value || selected.has(d.value);
+                      const active = everyDay.value || selected.has(d);
                       return (
                         <button
-                          key={d.value}
+                          key={d}
                           type="button"
-                          onClick={() => toggleDay(d.value)}
+                          onClick={() => toggleDay(d)}
                           disabled={everyDay.value}
-                          title={d.label}
+                          title={t(`dayLabel.${d}`)}
                           aria-pressed={active}
                           className={cn(
                             "h-9 w-11 rounded border text-xs font-medium transition-colors",
@@ -85,16 +87,14 @@ export function HabitFields({ register, control, ids, titleError, daysError }: P
                             everyDay.value && "cursor-not-allowed opacity-70",
                           )}
                         >
-                          {d.short}
+                          {t(`dayShort.${d}`)}
                         </button>
                       );
                     })}
                   </div>
 
                   <p className="text-[11px] text-foreground-subtle">
-                    {everyDay.value
-                      ? "Aparecerá todos os dias da semana."
-                      : "Selecione os dias em que a tarefa deve aparecer."}
+                    {everyDay.value ? t("hintEveryDay") : t("hintSelectDays")}
                   </p>
                   {daysError && <p className="text-xs text-destructive">{daysError}</p>}
                 </div>

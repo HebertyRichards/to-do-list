@@ -9,8 +9,10 @@ import { ProfileSection } from "@/components/settings/ProfileSection";
 import { EmailSection } from "@/components/settings/EmailSection";
 import { PasswordSection } from "@/components/settings/PasswordSection";
 import { DangerZone } from "@/components/settings/DangerZone";
+import { useTranslations } from "next-intl";
 
 export default function SettingsClient() {
+  const t = useTranslations("pages");
   const router = useRouter();
   const { user, isLoading } = useAuth();
 
@@ -30,7 +32,7 @@ export default function SettingsClient() {
   if (!user) return null;
 
   return (
-    <AppShell title="Configurações">
+    <AppShell title={t("settings")}>
       <div className="mx-auto max-w-xl space-y-8 p-6">
         <ProfileSection key={user.username} username={user.username} avatarUrl={user.avatar_url ?? ""} />
         <EmailSection key={user.email} email={user.email} />

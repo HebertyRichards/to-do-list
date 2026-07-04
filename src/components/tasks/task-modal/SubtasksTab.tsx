@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Plus, Flag } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDisplayBadge } from "@/utils/statuses";
@@ -15,6 +16,9 @@ interface Props {
 }
 
 export function SubtasksTab({ taskSlug, subtasks, loading, onOpenSubtask }: Props) {
+  const tStatus = useTranslations("status");
+  const tBoard = useTranslations("board");
+  const tModal = useTranslations("taskModal");
   const [adding, setAdding] = useState(false);
 
   if (loading) {
@@ -30,7 +34,7 @@ export function SubtasksTab({ taskSlug, subtasks, loading, onOpenSubtask }: Prop
   return (
     <>
       {subtasks.length === 0 && !adding && (
-        <p className="text-sm text-foreground-subtle italic">Nenhuma subtarefa</p>
+        <p className="text-sm text-foreground-subtle italic">{tBoard("noSubtasks")}</p>
       )}
 
       {subtasks.map((s) => {
@@ -45,14 +49,14 @@ export function SubtasksTab({ taskSlug, subtasks, loading, onOpenSubtask }: Prop
           >
             <span className="flex min-w-0 items-center gap-1.5">
               {s.is_urgent && (
-                <Flag className="h-3.5 w-3.5 shrink-0 fill-red-500 text-red-500" aria-label="Urgente" />
+                <Flag className="h-3.5 w-3.5 shrink-0 fill-red-500 text-red-500" aria-label={tModal("urgent")} />
               )}
               <span className={isDone ? "truncate line-through text-foreground-subtle text-sm" : "truncate text-sm"}>
                 {s.title}
               </span>
             </span>
             <span className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium ${badge.className}`}>
-              {badge.label}
+              {tStatus(badge.key)}
             </span>
           </button>
         );
@@ -66,7 +70,7 @@ export function SubtasksTab({ taskSlug, subtasks, loading, onOpenSubtask }: Prop
           className="flex w-full items-center gap-1.5 rounded border border-dashed border-border px-3 py-2 text-xs text-foreground-subtle hover:text-foreground-muted transition-colors"
         >
           <Plus className="h-3.5 w-3.5" />
-          Nova subtarefa
+          {tModal("newSubtask")}
         </button>
       )}
     </>

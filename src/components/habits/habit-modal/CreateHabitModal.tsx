@@ -1,6 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
@@ -12,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCreateHabit } from "@/hooks/use-habits";
-import { habitFormSchema, type HabitFormFields, FULLSCREEN_MOBILE } from "../constants";
+import { makeHabitFormSchema, type HabitFormFields, FULLSCREEN_MOBILE } from "../constants";
 import { HabitFields } from "./HabitFields";
 
 interface Props {
@@ -31,6 +33,8 @@ export function CreateHabitModal({ open, onOpenChange }: Props) {
 }
 
 function CreateHabitForm({ onClose }: { onClose: () => void }) {
+  const t = useTranslations("habits");
+  const tCommon = useTranslations("common");
   const create = useCreateHabit();
 
   const {
@@ -39,7 +43,7 @@ function CreateHabitForm({ onClose }: { onClose: () => void }) {
     handleSubmit,
     formState: { errors },
   } = useForm<HabitFormFields>({
-    resolver: zodResolver(habitFormSchema),
+    resolver: zodResolver(useMemo(() => makeHabitFormSchema(t), [t])),
     defaultValues: { title: "", description: "", everyDay: false, days: [] },
   });
 
@@ -58,9 +62,9 @@ function CreateHabitForm({ onClose }: { onClose: () => void }) {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <DialogHeader>
-        <DialogTitle>Novo hábito</DialogTitle>
+        <DialogTitle>{t("createTitle")}</DialogTitle>
         <DialogDescription className="text-[11px]">
-          Defina o título e em quais dias ele deve aparecer.
+          {t("createSubtitle")}
         </DialogDescription>
       </DialogHeader>
 
@@ -76,10 +80,10 @@ function CreateHabitForm({ onClose }: { onClose: () => void }) {
 
       <DialogFooter className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
         <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={create.isPending}>
-          Cancelar
+          {tCommon("cancel")}
         </Button>
         <Button type="submit" size="sm" disabled={create.isPending}>
-          {create.isPending ? "Criando..." : "Criar hábito"}
+          {create.isPending ? t("creating") : t("create")}
         </Button>
       </DialogFooter>
     </form>

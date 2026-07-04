@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Check, X } from "lucide-react";
 import { useMarkRead } from "@/hooks/use-notifications";
 import { useAcceptJoinRequest, useRejectJoinRequest } from "@/hooks/use-groups";
@@ -8,16 +9,17 @@ import { formatCreatedAtLocal } from "@/utils/datetime";
 import { cn } from "@/utils/cn";
 import type { Notification } from "@/types/api";
 
-export const NOTIF_TYPE_LABELS: Record<string, string> = {
-  join_request_created: "Solicitação de entrada",
-  join_request_accepted: "Solicitação aceita",
-  join_request_rejected: "Solicitação recusada",
-  task_assigned: "Tarefa atribuída",
-  subtask_assigned: "Subtarefa atribuída",
-  member_removed: "Removido do grupo",
-  group_deleted: "Grupo excluído",
-  daily_reminder: "Lembrete do diário",
-};
+// Tipos com rótulo traduzido em notifications.types.{type}.
+const KNOWN_NOTIF_TYPES = new Set([
+  "join_request_created",
+  "join_request_accepted",
+  "join_request_rejected",
+  "task_assigned",
+  "subtask_assigned",
+  "member_removed",
+  "group_deleted",
+  "daily_reminder",
+]);
 
 interface Props {
   notif: Notification;
@@ -25,6 +27,7 @@ interface Props {
 }
 
 export function NotificationItem({ notif, onNavigate }: Props) {
+  const t = useTranslations("notifications");
   const router = useRouter();
   const markRead = useMarkRead();
   const acceptRequest = useAcceptJoinRequest();
@@ -91,7 +94,8 @@ export function NotificationItem({ notif, onNavigate }: Props) {
         {isUnread && <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
       </div>
       <span className="mt-0.5 block text-[10px] text-foreground-subtle">
-        {NOTIF_TYPE_LABELS[notif.type] ?? notif.type} · {formatCreatedAtLocal(notif.created_at)}
+        {KNOWN_NOTIF_TYPES.has(notif.type) ? t(`types.${notif.type}`) : notif.type} ·{" "}
+        {formatCreatedAtLocal(notif.created_at)}
       </span>
       {showJoinActions && (
         <div className="mt-1.5 flex gap-1.5">

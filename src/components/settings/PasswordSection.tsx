@@ -1,31 +1,43 @@
 "use client";
 
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { passwordSchema } from "@/lib/password-schema";
+import { makePasswordSchema } from "@/lib/password-schema";
 import { useRequestPasswordChange, useConfirmPasswordChange } from "@/hooks/use-auth";
 import { SettingsSection, LabeledInput } from "./primitives";
 import { CodeConfirmForm } from "./CodeConfirmForm";
 
-const schema = z
-  .object({
-    current_password: z.string().min(1, "Informe sua senha atual"),
-    new_password: passwordSchema,
-    confirm_new_password: z.string(),
-  })
-  .refine((d) => d.new_password === d.confirm_new_password, {
-    path: ["confirm_new_password"],
-    message: "As senhas não coincidem",
-  });
-
-type Fields = z.infer<typeof schema>;
+type Fields = {
+  current_password: string;
+  new_password: string;
+  confirm_new_password: string;
+};
 
 export function PasswordSection() {
+  const t = useTranslations("settings");
   const request = useRequestPasswordChange();
   const confirm = useConfirmPasswordChange();
+
+  const schema = useMemo(
+    () =>
+      z
+        .object({
+          current_password: z.string().min(1, t("currentPasswordRequired")),
+          new_password: makePasswordSchema(t),
+          confirm_new_password: z.string(),
+        })
+        .refine((d) => d.new_password === d.confirm_new_password, {
+          path: ["confirm_new_password"],
+          message: t("passwordsMismatch"),
+        }),
+    [t],
+  );
+
   const {
     register,
     handleSubmit,
@@ -37,10 +49,10 @@ export function PasswordSection() {
 
   if (request.isSuccess) {
     return (
-      <SettingsSection title="Senha">
+      <SettingsSection title={t("passwordTitle")}>
         <CodeConfirmForm
-          description="Digite o código de 6 dígitos enviado para o seu email. Você precisará entrar novamente após a troca."
-          submitLabel="Confirmar nova senha"
+          description={t("passwordCodeSent")}
+          submitLabel={t("confirmNewPasswordSubmit")}
           isPending={confirm.isPending}
           onSubmit={(code) => confirm.mutate({ code })}
           onCancel={() => request.reset()}
@@ -50,10 +62,7 @@ export function PasswordSection() {
   }
 
   return (
-    <SettingsSection
-      title="Senha"
-      description="Ao confirmar, enviamos um código para o seu email para concluir a troca."
-    >
+    <SettingsSection title={t("passwordTitle")} description={t("passwordDescription")}>
       <form
         onSubmit={handleSubmit(
           (data) => request.mutate(data),
@@ -68,28 +77,28 @@ export function PasswordSection() {
         className="space-y-4"
       >
         <LabeledInput
-          label="Senha atual"
+          label={t("currentPassword")}
           type="password"
           autoComplete="current-password"
           error={errors.current_password?.message}
           {...register("current_password")}
         />
         <LabeledInput
-          label="Nova senha"
+          label={t("newPassword")}
           type="password"
           autoComplete="new-password"
           error={errors.new_password?.message}
           {...register("new_password")}
         />
         <LabeledInput
-          label="Confirmar nova senha"
+          label={t("confirmNewPassword")}
           type="password"
           autoComplete="new-password"
           error={errors.confirm_new_password?.message}
           {...register("confirm_new_password")}
         />
         <Button type="submit" disabled={request.isPending}>
-          {request.isPending ? "Enviando..." : "Enviar código"}
+          {request.isPending ? t("sending") : t("sendCode")}
         </Button>
       </form>
     </SettingsSection>

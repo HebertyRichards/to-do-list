@@ -18,10 +18,13 @@ import { HabitCard } from "@/components/habits/HabitCard";
 import { HabitStatsCards } from "@/components/habits/HabitStatsCards";
 import { CreateHabitModal } from "@/components/habits/habit-modal/CreateHabitModal";
 import { EditHabitModal } from "@/components/habits/habit-modal/EditHabitModal";
+import { useTranslations } from "next-intl";
 
 type View = "today" | "all";
 
 export default function DiaryClient() {
+  const t = useTranslations("pages");
+  const tH = useTranslations("habits");
   const router = useRouter();
   const { user, isLoading: loadingUser } = useAuth();
 
@@ -52,7 +55,7 @@ export default function DiaryClient() {
   const loadingList = view === "today" ? loadingToday : loadingAll;
 
   return (
-    <AppShell title="Diário">
+    <AppShell title={t("diary")}>
       <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
         <HabitStatsCards stats={stats} isLoading={loadingStats} />
 
@@ -70,13 +73,13 @@ export default function DiaryClient() {
                     : "text-foreground-muted hover:text-foreground",
                 )}
               >
-                {v === "today" ? "Hoje" : "Todos"}
+                {v === "today" ? tH("today") : tH("all")}
               </button>
             ))}
           </div>
 
           <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-1.5 h-4 w-4" /> Novo hábito
+            <Plus className="mr-1.5 h-4 w-4" /> {tH("newHabit")}
           </Button>
         </div>
 
@@ -88,9 +91,7 @@ export default function DiaryClient() {
         ) : habits.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-8 text-center">
             <p className="text-sm text-foreground-muted">
-              {view === "today"
-                ? "Nenhum hábito programado para hoje."
-                : "Você ainda não tem hábitos. Crie o primeiro!"}
+              {view === "today" ? tH("emptyToday") : tH("emptyAll")}
             </p>
           </div>
         ) : (

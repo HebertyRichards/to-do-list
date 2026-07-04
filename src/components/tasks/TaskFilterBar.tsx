@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,12 +32,12 @@ interface Props {
   groupSlug?: string;
 }
 
-const SORT_OPTIONS: { value: TaskSort; label: string }[] = [
-  { value: "position", label: "Posição" },
-  { value: "due_date", label: "Prazo" },
-  { value: "created_at", label: "Recentes" },
-  { value: "priority", label: "Prioridade" },
-  { value: "title", label: "Título" },
+const SORT_OPTIONS: { value: TaskSort; labelKey: string }[] = [
+  { value: "position", labelKey: "sortPosition" },
+  { value: "due_date", labelKey: "sortDueDate" },
+  { value: "created_at", labelKey: "sortCreatedAt" },
+  { value: "priority", labelKey: "sortPriority" },
+  { value: "title", labelKey: "sortTitle" },
 ];
 
 const ALL = "__all__";
@@ -50,6 +51,8 @@ export function TaskFilterBar({
   assignees,
   groupSlug,
 }: Props) {
+  const t = useTranslations("filters");
+  const tStatus = useTranslations("status");
   const toggleStatus = (s: TaskStatus) =>
     setFilter(
       "statuses",
@@ -74,7 +77,7 @@ export function TaskFilterBar({
                 : "text-foreground-muted hover:bg-surface-secondary",
             )}
           >
-            {k === "task" ? "Tarefas" : "Subtarefas"}
+            {k === "task" ? t("tasks") : t("subtasks")}
           </button>
         ))}
       </div>
@@ -84,7 +87,7 @@ export function TaskFilterBar({
         <Input
           value={filters.q}
           onChange={(e) => setFilter("q", e.target.value)}
-          placeholder="Buscar..."
+          placeholder={t("search")}
           className="h-8 w-44 pl-7 text-sm"
         />
       </div>
@@ -103,7 +106,7 @@ export function TaskFilterBar({
                 !active && "opacity-40 hover:opacity-70",
               )}
             >
-              {opt.label}
+              {tStatus(opt.key)}
             </button>
           );
         })}
@@ -114,10 +117,11 @@ export function TaskFilterBar({
           <Button variant="outline" size="sm" className="h-8 w-40 justify-between text-xs font-normal">
             <span className="truncate">
               {filters.categories.length === 0
-                ? "Todas categorias"
+                ? t("allCategories")
                 : filters.categories.length === 1
-                  ? categories.find((c) => c.slug === filters.categories[0])?.name ?? "1 categoria"
-                  : `${filters.categories.length} categorias`}
+                  ? categories.find((c) => c.slug === filters.categories[0])?.name ??
+                    t("categoriesCount", { count: 1 })
+                  : t("categoriesCount", { count: filters.categories.length })}
             </span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
           </Button>
@@ -156,11 +160,11 @@ export function TaskFilterBar({
             onValueChange={(v) => setFilter("assignee", v === ALL ? null : v)}
           >
             <SelectTrigger size="sm" className="w-36 text-xs">
-              <SelectValue placeholder="Responsável" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL} className="text-sm">
-                Todos responsáveis
+                {t("allAssignees")}
               </SelectItem>
               {assignees.map((a) => (
                 <SelectItem key={a} value={a} className="text-sm">
@@ -177,7 +181,7 @@ export function TaskFilterBar({
               checked={filters.assignedToMe}
               onChange={(e) => setFilter("assignedToMe", e.target.checked)}
             />
-            Minhas
+            {t("mine")}
           </label>
         </>
       )}
@@ -189,7 +193,7 @@ export function TaskFilterBar({
           checked={filters.urgentOnly}
           onChange={(e) => setFilter("urgentOnly", e.target.checked)}
         />
-        Urgentes
+        {t("urgent")}
       </label>
 
       <label className="flex cursor-pointer items-center gap-1.5 text-xs text-foreground-muted">
@@ -199,7 +203,7 @@ export function TaskFilterBar({
           checked={filters.overdueOnly}
           onChange={(e) => setFilter("overdueOnly", e.target.checked)}
         />
-        Atrasadas
+        {t("overdue")}
       </label>
 
       <Select value={filters.sort} onValueChange={(v) => setFilter("sort", v as TaskSort)}>
@@ -209,7 +213,7 @@ export function TaskFilterBar({
         <SelectContent>
           {SORT_OPTIONS.map((o) => (
             <SelectItem key={o.value} value={o.value} className="text-sm">
-              {o.label}
+              {t(o.labelKey)}
             </SelectItem>
           ))}
         </SelectContent>
@@ -218,7 +222,7 @@ export function TaskFilterBar({
       {isActive && (
         <Button variant="ghost" size="sm" onClick={reset} className="h-8 text-xs">
           <X className="mr-1 h-3.5 w-3.5" />
-          Limpar
+          {t("clear")}
         </Button>
       )}
     </div>

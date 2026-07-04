@@ -1,10 +1,14 @@
 import { z } from "zod";
 
-export const passwordSchema = z
-  .string()
-  .min(8, "Mínimo 8 caracteres")
-  .max(128)
-  .regex(/[A-Z]/, "Deve conter ao menos uma letra maiúscula")
-  .regex(/[a-z]/, "Deve conter ao menos uma letra minúscula")
-  .regex(/[0-9]/, "Deve conter ao menos um número")
-  .regex(/[^A-Za-z0-9]/, "Deve conter ao menos um caractere especial");
+// Mensagens vêm do namespace "settings" (passwordMin, passwordUpper, ...),
+// então o schema é uma factory que recebe o `t` do next-intl.
+export function makePasswordSchema(t: (key: string) => string) {
+  return z
+    .string()
+    .min(8, t("passwordMin"))
+    .max(128)
+    .regex(/[A-Z]/, t("passwordUpper"))
+    .regex(/[a-z]/, t("passwordLower"))
+    .regex(/[0-9]/, t("passwordNumber"))
+    .regex(/[^A-Za-z0-9]/, t("passwordSpecial"));
+}

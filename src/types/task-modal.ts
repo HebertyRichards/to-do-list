@@ -47,18 +47,21 @@ export interface DeleteAction {
   mutate: (opts: { onSuccess: () => void }) => void;
 }
 
-export const itemFormSchema = z
-  .object({
-    title: z.string().trim().min(1, "Título obrigatório").max(180),
-    description: z.string(),
-    startDate: z.string().min(1, "Data de início obrigatória"),
-    dueDate: z.string().min(1, "Prazo obrigatório"),
-    status: TaskStatusSchema,
-    isUrgent: z.boolean(),
-    assignee: z.string(),
-  })
-  .refine((d) => !d.startDate || !d.dueDate || d.dueDate >= d.startDate, {
-    path: ["dueDate"],
-    message: "O prazo deve ser igual ou posterior ao início",
-  });
-export type ItemFormFields = z.infer<typeof itemFormSchema>;
+// Mensagens vêm do namespace "taskModal"; o schema é factory para usar o `t`.
+export function makeItemFormSchema(t: (key: string) => string) {
+  return z
+    .object({
+      title: z.string().trim().min(1, t("titleRequired")).max(180),
+      description: z.string(),
+      startDate: z.string().min(1, t("startRequired")),
+      dueDate: z.string().min(1, t("dueRequired")),
+      status: TaskStatusSchema,
+      isUrgent: z.boolean(),
+      assignee: z.string(),
+    })
+    .refine((d) => !d.startDate || !d.dueDate || d.dueDate >= d.startDate, {
+      path: ["dueDate"],
+      message: t("dueAfterStart"),
+    });
+}
+export type ItemFormFields = z.infer<ReturnType<typeof makeItemFormSchema>>;

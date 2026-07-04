@@ -1,6 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
@@ -14,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useCreateTask } from "@/hooks/use-tasks";
 import { useGroupMembers } from "@/hooks/use-groups";
 import { localNow, localInputToIso } from "@/utils/datetime";
-import { itemFormSchema, type ItemFormFields } from "@/types/task-modal";
+import { makeItemFormSchema, type ItemFormFields } from "@/types/task-modal";
 import { FieldsBlock } from "./FieldsBlock";
 import { FULLSCREEN_MOBILE } from "./constants";
 
@@ -50,6 +52,8 @@ function CreateTaskForm({
   groupSlug?: string;
   onClose: () => void;
 }) {
+  const t = useTranslations("taskModal");
+  const tCommon = useTranslations("common");
   const create = useCreateTask(groupSlug);
   const { data: members = [] } = useGroupMembers(groupSlug ?? "");
 
@@ -60,7 +64,7 @@ function CreateTaskForm({
     handleSubmit,
     formState: { errors },
   } = useForm<ItemFormFields>({
-    resolver: zodResolver(itemFormSchema),
+    resolver: zodResolver(useMemo(() => makeItemFormSchema(t), [t])),
     defaultValues: {
       title: "",
       description: "",
@@ -101,9 +105,9 @@ function CreateTaskForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <DialogHeader>
-        <DialogTitle>Nova tarefa</DialogTitle>
+        <DialogTitle>{t("newTask")}</DialogTitle>
         <DialogDescription className="text-[11px]">
-          Preencha os detalhes e defina início e prazo.
+          {t("newTaskSubtitle")}
         </DialogDescription>
       </DialogHeader>
 
@@ -123,10 +127,10 @@ function CreateTaskForm({
 
       <DialogFooter className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
         <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={create.isPending}>
-          Cancelar
+          {tCommon("cancel")}
         </Button>
         <Button type="submit" size="sm" disabled={create.isPending}>
-          {create.isPending ? "Criando..." : "Criar tarefa"}
+          {create.isPending ? t("creating") : t("createTask")}
         </Button>
       </DialogFooter>
     </form>

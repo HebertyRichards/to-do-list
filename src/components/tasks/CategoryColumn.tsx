@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useState, useRef, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { TaskCard } from "./TaskCard";
 import { CreateTaskModal } from "./task-modal/CreateTaskModal";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,6 +40,7 @@ function CategoryColumnImpl({
   onMoveTask,
   groupSlug,
 }: Props) {
+  const tBoard = useTranslations("board");
   const [addingTask, setAddingTask] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [nameDraft, setNameDraft] = useState(category.name);
@@ -163,7 +165,7 @@ function CategoryColumnImpl({
             ))}
 
         {!isLoading && tasks.length === 0 && (
-          <p className="px-1 text-xs text-foreground-subtle">Sem tarefas</p>
+          <p className="px-1 text-xs text-foreground-subtle">{tBoard("noTasks")}</p>
         )}
       </div>
 
@@ -172,7 +174,7 @@ function CategoryColumnImpl({
         className="flex items-center gap-1.5 rounded px-1 py-1 text-xs text-foreground-subtle hover:text-foreground-muted transition-colors"
       >
         <Plus className="h-3.5 w-3.5" />
-        Tarefa
+        {tBoard("addTask")}
       </button>
 
       <CreateTaskModal

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { HabitStats } from "@/types/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -11,6 +12,7 @@ interface ProgressCardProps {
 }
 
 function ProgressCard({ label, done, scheduled, percent }: ProgressCardProps) {
+  const t = useTranslations("habits");
   return (
     <div className="rounded-lg border border-border bg-surface p-4">
       <div className="flex items-baseline justify-between">
@@ -24,7 +26,7 @@ function ProgressCard({ label, done, scheduled, percent }: ProgressCardProps) {
         />
       </div>
       <p className="mt-1.5 text-[11px] text-foreground-subtle">
-        {done} de {scheduled} concluídos
+        {t("doneOf", { done, scheduled })}
       </p>
     </div>
   );
@@ -36,6 +38,7 @@ interface Props {
 }
 
 export function HabitStatsCards({ stats, isLoading }: Props) {
+  const t = useTranslations("habits");
   if (isLoading || !stats) {
     return (
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -48,13 +51,13 @@ export function HabitStatsCards({ stats, isLoading }: Props) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <ProgressCard
-        label="Hoje"
+        label={t("today")}
         done={stats.daily_done}
         scheduled={stats.daily_scheduled}
         percent={stats.daily_percent}
       />
       <ProgressCard
-        label={`Mês (${stats.month})`}
+        label={t("monthLabel", { month: stats.month })}
         done={stats.monthly_done}
         scheduled={stats.monthly_scheduled}
         percent={stats.monthly_percent}

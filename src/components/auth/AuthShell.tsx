@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useTranslations } from "next-intl";
+import { LanguageSelect } from "@/components/layout/LanguageSelect";
 import { LoginForm } from "./LoginForm";
 import { RegisterForm } from "./RegisterForm";
 import { ForgotPasswordEmailForm } from "./ForgotPasswordEmailForm";
@@ -19,6 +21,7 @@ const transition = {
 };
 
 export function AuthShell() {
+  const t = useTranslations("auth");
   const [step, setStep] = useState<Step>("login");
   const [resetEmail, setResetEmail] = useState("");
   const [resetCode, setResetCode] = useState("");
@@ -31,6 +34,9 @@ export function AuthShell() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-auth-gradient-from to-auth-gradient-to p-4">
       <div className="w-full max-w-md overflow-hidden rounded-xl bg-surface p-8 shadow-xl">
+        <div className="mb-2 flex justify-end">
+          <LanguageSelect />
+        </div>
         <AnimatePresence mode="wait">
           {step === "login" && (
             <motion.div key="login" {...transition}>
@@ -57,8 +63,8 @@ export function AuthShell() {
             <motion.div key="verify-email" {...transition}>
               <VerifyCodeForm
                 email={verifyEmail}
-                title="Confirme seu email"
-                description="Digite o código de 6 dígitos enviado para"
+                title={t("verifyEmailTitle")}
+                description={t("codeSentTo")}
                 isPending={verifyEmailMutation.isPending}
                 isResending={resendVerification.isPending}
                 onSubmit={(code) => verifyEmailMutation.mutate({ email: verifyEmail, code })}

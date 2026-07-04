@@ -20,12 +20,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { GroupMembersDialog } from "@/components/groups/GroupMembersDialog";
+import { useTranslations } from "next-intl";
 
 interface Props {
   groupSlug: string;
 }
 
 export default function GroupBoardClient({ groupSlug }: Props) {
+  const t = useTranslations("pages");
+  const tG = useTranslations("groupBoard");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const { user } = useAuth();
   const { data: tasks = [], isLoading: loadingTasks } = useGroupTasks(groupSlug);
@@ -57,11 +61,11 @@ export default function GroupBoardClient({ groupSlug }: Props) {
   };
 
   return (
-    <AppShell title={group?.name ?? "Grupo"}>
+    <AppShell title={group?.name ?? t("group")}>
       <div className="flex items-center justify-end gap-2 px-6 pt-4">
         <Button variant="outline" size="sm" onClick={() => setMembersOpen(true)}>
           <Users className="mr-1.5 h-4 w-4" />
-          Membros ({group?.member_count ?? 0})
+          {tG("members", { count: group?.member_count ?? 0 })}
         </Button>
         <Button
           variant="outline"
@@ -72,12 +76,12 @@ export default function GroupBoardClient({ groupSlug }: Props) {
           {isAdmin ? (
             <>
               <Trash2 className="mr-1.5 h-4 w-4" />
-              Excluir grupo
+              {tG("deleteGroup")}
             </>
           ) : (
             <>
               <LogOut className="mr-1.5 h-4 w-4" />
-              Sair do grupo
+              {tG("leaveGroup")}
             </>
           )}
         </Button>
@@ -99,12 +103,10 @@ export default function GroupBoardClient({ groupSlug }: Props) {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-destructive">
-              {isAdmin ? "Excluir grupo?" : "Sair do grupo?"}
+              {isAdmin ? tG("confirmDeleteTitle") : tG("confirmLeaveTitle")}
             </DialogTitle>
             <DialogDescription>
-              {isAdmin
-                ? "Esta ação é permanente. Todas as tarefas, categorias e subtarefas do grupo serão removidas."
-                : "Você perderá acesso ao quadro do grupo. Suas tarefas criadas no grupo serão removidas."}
+              {isAdmin ? tG("confirmDeleteBody") : tG("confirmLeaveBody")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
@@ -113,7 +115,7 @@ export default function GroupBoardClient({ groupSlug }: Props) {
               onClick={() => setConfirmOpen(false)}
               disabled={pending}
             >
-              Cancelar
+              {tCommon("cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -122,11 +124,11 @@ export default function GroupBoardClient({ groupSlug }: Props) {
             >
               {pending
                 ? isAdmin
-                  ? "Excluindo..."
-                  : "Saindo..."
+                  ? tG("deleting")
+                  : tG("leaving")
                 : isAdmin
-                  ? "Excluir grupo"
-                  : "Sair"}
+                  ? tG("deleteGroup")
+                  : tG("leave")}
             </Button>
           </DialogFooter>
         </DialogContent>

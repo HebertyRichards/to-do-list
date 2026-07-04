@@ -2,6 +2,7 @@
 
 import { memo } from "react";
 import { Flag } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Select,
@@ -23,6 +24,8 @@ interface Props {
 }
 
 function TaskCardImpl({ task, onSelect }: Props) {
+  const tStatus = useTranslations("status");
+  const tBoard = useTranslations("board");
   const update = useUpdateTask();
   const { user } = useAuth();
   const statusOpt = getStatusOption(task.status);
@@ -81,7 +84,7 @@ function TaskCardImpl({ task, onSelect }: Props) {
         {isDone ? (
           <div className="flex items-center gap-2">
             <span className={cn("rounded px-1.5 py-0.5 text-[11px] font-medium", statusOpt.className)}>
-              {statusOpt.label}
+              {tStatus(statusOpt.key)}
             </span>
             {canComplete && (
               <button
@@ -93,7 +96,7 @@ function TaskCardImpl({ task, onSelect }: Props) {
                 disabled={update.isPending}
                 className="rounded px-1.5 py-0.5 text-[11px] font-medium text-foreground-muted hover:bg-surface-secondary hover:text-foreground transition-colors disabled:opacity-50"
               >
-                Reabrir
+                {tBoard("reopen")}
               </button>
             )}
           </div>
@@ -117,7 +120,7 @@ function TaskCardImpl({ task, onSelect }: Props) {
                   disabled={!canComplete && opt.value === "done"}
                   className="text-xs"
                 >
-                  {opt.label}
+                  {tStatus(opt.key)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -127,7 +130,7 @@ function TaskCardImpl({ task, onSelect }: Props) {
         <div className="flex items-center gap-2 shrink-0">
           {task.is_overdue && (
             <span className={cn("rounded px-1.5 py-0.5 text-[11px] font-medium", OVERDUE_BADGE.className)}>
-              {OVERDUE_BADGE.label}
+              {tStatus(OVERDUE_BADGE.key)}
             </span>
           )}
           {(doneCount > 0 || totalCount > 0) && (

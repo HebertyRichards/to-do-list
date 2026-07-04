@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Bell, CheckCheck, WifiOff } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { ModeToggle } from "@/components/layout/ThemeToggle";
+import { LanguageSelect } from "@/components/layout/LanguageSelect";
 import { useMarkAllRead } from "@/hooks/use-notifications";
 import { useNotificationsCtx } from "@/providers/notifications";
 import type { Notification } from "@/types/api";
@@ -17,6 +19,7 @@ interface Props {
 }
 
 export function Topbar({ title, notifications, loadingNotifs, unreadCount, pagination }: Props) {
+  const t = useTranslations("notifications");
   const markAllRead = useMarkAllRead();
   const { gaveUp, reconnect } = useNotificationsCtx();
   const [open, setOpen] = useState(false);
@@ -44,13 +47,14 @@ export function Topbar({ title, notifications, loadingNotifs, unreadCount, pagin
     <header className="flex h-14 shrink-0 items-center justify-between border-b bg-surface px-6">
       <span className="font-semibold text-foreground-muted truncate">{title ?? ""}</span>
       <div className="flex items-center gap-3">
+        <LanguageSelect />
         <ModeToggle />
         <div ref={containerRef} className="relative">
           <button
             type="button"
             className="relative flex h-8 w-8 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-secondary hover:text-foreground transition-colors"
             onClick={() => setOpen((v) => !v)}
-            title="Notificações"
+            title={t("title")}
             aria-expanded={open}
           >
             <Bell className="h-5 w-5" />
@@ -64,7 +68,7 @@ export function Topbar({ title, notifications, loadingNotifs, unreadCount, pagin
           {open && (
             <div className="absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-md border border-border bg-surface shadow-lg">
               <div className="flex items-center justify-between border-b border-border px-3 py-2">
-                <span className="text-sm font-semibold text-foreground">Notificações</span>
+                <span className="text-sm font-semibold text-foreground">{t("title")}</span>
                 {unreadCount > 0 && (
                   <button
                     onClick={() => markAllRead.mutate()}
@@ -72,7 +76,7 @@ export function Topbar({ title, notifications, loadingNotifs, unreadCount, pagin
                     className="flex items-center gap-1 text-[11px] text-foreground-muted hover:text-foreground transition-colors"
                   >
                     <CheckCheck className="h-3.5 w-3.5" />
-                    Marcar todas
+                    {t("markAll")}
                   </button>
                 )}
               </div>
@@ -80,13 +84,13 @@ export function Topbar({ title, notifications, loadingNotifs, unreadCount, pagin
                 <div className="flex items-center justify-between gap-2 border-b border-border bg-surface-secondary px-3 py-2">
                   <span className="flex items-center gap-1.5 text-[11px] text-foreground-muted">
                     <WifiOff className="h-3.5 w-3.5" />
-                    Conexão perdida.
+                    {t("connectionLost")}
                   </span>
                   <button
                     onClick={reconnect}
                     className="text-[11px] font-medium text-primary hover:underline"
                   >
-                    Reconectar
+                    {t("reconnect")}
                   </button>
                 </div>
               )}

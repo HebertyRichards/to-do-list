@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { useUpdateProfile } from "@/hooks/use-profile";
 
+const SECTIONS = [
+  { titleKey: "individualTitle", bodyKey: "individualBody" },
+  { titleKey: "groupTitle", bodyKey: "groupBody" },
+  { titleKey: "notificationsTitle", bodyKey: "notificationsBody" },
+  { titleKey: "structureTitle", bodyKey: "structureBody" },
+] as const;
+
 export default function OnboardingModal() {
+  const t = useTranslations("onboarding");
   const [open, setOpen] = useState(true);
   const update = useUpdateProfile();
 
@@ -24,34 +33,21 @@ export default function OnboardingModal() {
     <Dialog open={open} onOpenChange={(v) => { if (!v) finish(); }}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Bem-vindo ao To-Do List!</DialogTitle>
-          <DialogDescription>Um resumo rápido de como tudo funciona.</DialogDescription>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("subtitle")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 text-sm text-foreground-muted">
-          <section>
-            <p className="font-semibold mb-1">📋 Modo Individual</p>
-            <p>Crie categorias (ex: Trabalho, Pessoal), organize tarefas dentro delas com subtarefas, tags e datas de início/prazo.</p>
-          </section>
-
-          <section>
-            <p className="font-semibold mb-1">👥 Modo Grupo</p>
-            <p>Crie um grupo — você será o admin e receberá uma <strong>chave única</strong> para compartilhar. Outros usuários entram com a chave; você aprova ou recusa. Membros criam tarefas, e ao sair, suas tarefas são removidas.</p>
-          </section>
-
-          <section>
-            <p className="font-semibold mb-1">🔔 Notificações</p>
-            <p>Você recebe notificações em tempo real sobre solicitações de entrada, atribuições de tarefas e ações do grupo.</p>
-          </section>
-
-          <section>
-            <p className="font-semibold mb-1">📁 Categorias → Tarefas → Subtarefas</p>
-            <p>Cada tarefa e subtarefa tem data de início e prazo obrigatórios. Subtarefas podem ser atribuídas a membros específicos do grupo.</p>
-          </section>
+          {SECTIONS.map(({ titleKey, bodyKey }) => (
+            <section key={titleKey}>
+              <p className="font-semibold mb-1">{t(titleKey)}</p>
+              <p>{t.rich(bodyKey, { strong: (c) => <strong>{c}</strong> })}</p>
+            </section>
+          ))}
         </div>
 
         <Button onClick={finish} disabled={update.isPending} className="w-full">
-          {update.isPending ? "Salvando..." : "Entendi, vamos começar!"}
+          {update.isPending ? t("saving") : t("start")}
         </Button>
       </DialogContent>
     </Dialog>

@@ -10,8 +10,10 @@ import { AppShell } from "@/components/layout/AppShell";
 import OnboardingModal from "@/components/layout/OnboardingModal";
 import { BoardWorkspace } from "@/components/tasks/BoardWorkspace";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslations } from "next-intl";
 
 export default function DashboardClient() {
+  const t = useTranslations("pages");
   const router = useRouter();
   const { user, isLoading: loadingUser } = useAuth();
   const { data: tasks = [], isLoading: loadingTasks } = useTasks();
@@ -34,7 +36,7 @@ export default function DashboardClient() {
   if (!user) return null;
 
   return (
-    <AppShell title="Minhas tarefas">
+    <AppShell title={t("myTasks")}>
       {!user.onboarded && <OnboardingModal />}
       <BoardWorkspace
         categories={categories}

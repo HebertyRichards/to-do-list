@@ -1,17 +1,15 @@
 "use client";
 
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const schema = z.object({
-  code: z.string().length(6, "O código deve ter 6 dígitos").regex(/^\d{6}$/, "Apenas números"),
-});
-
-type Fields = z.infer<typeof schema>;
+type Fields = { code: string };
 
 interface Props {
   email: string;
@@ -31,9 +29,19 @@ export function VerifyCodeForm({
   onBack,
   isPending,
   isResending,
-  title = "Código de redefinição",
-  description = "Digite o código de 6 dígitos enviado para",
+  title,
+  description,
 }: Props) {
+  const t = useTranslations("auth");
+
+  const schema = useMemo(
+    () =>
+      z.object({
+        code: z.string().length(6, t("codeLength")).regex(/^\d{6}$/, t("codeDigitsOnly")),
+      }),
+    [t],
+  );
+
   const { register, handleSubmit, formState: { errors } } = useForm<Fields>({
     resolver: zodResolver(schema),
   });
@@ -41,15 +49,15 @@ export function VerifyCodeForm({
   return (
     <form onSubmit={handleSubmit((data) => onSubmit(data.code))} className="space-y-4">
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold">{title}</h1>
+        <h1 className="text-2xl font-bold">{title ?? t("verifyResetTitle")}</h1>
         <p className="text-sm text-foreground-muted">
-          {description}{" "}
+          {description ?? t("codeSentTo")}{" "}
           <span className="font-medium text-foreground">{email}</span>
         </p>
       </header>
 
       <div className="space-y-1.5">
-        <Label htmlFor="code">Código</Label>
+        <Label htmlFor="code">{t("code")}</Label>
         <Input
           id="code"
           inputMode="numeric"
@@ -63,12 +71,12 @@ export function VerifyCodeForm({
       </div>
 
       <Button type="submit" disabled={isPending} className="w-full">
-        {isPending ? "Verificando..." : "Continuar"}
+        {isPending ? t("verifying") : t("continue")}
       </Button>
 
       <div className="flex justify-between text-sm">
         <button type="button" onClick={onBack} className="text-primary hover:underline">
-          Voltar
+          {t("back")}
         </button>
         <button
           type="button"
@@ -76,7 +84,7 @@ export function VerifyCodeForm({
           disabled={isResending}
           className="text-primary hover:underline disabled:opacity-50"
         >
-          {isResending ? "Reenviando..." : "Reenviar código"}
+          {isResending ? t("resending") : t("resendCode")}
         </button>
       </div>
     </form>

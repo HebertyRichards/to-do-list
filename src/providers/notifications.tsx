@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { NotificationService } from "@/services/notificationService";
 import { useAuth } from "@/providers/auth";
 import { trpc } from "@/lib/trpc-client";
+import { useTranslations } from "next-intl";
 
 type NotifCtx = {
   wsConnected: boolean;
@@ -22,6 +23,7 @@ const NotifContext = createContext<NotifCtx>({
 const EVICTION_TYPES = new Set(["member_removed", "group_deleted"]);
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("notifications");
   const { user } = useAuth();
   const utils = trpc.useUtils();
   const router = useRouter();
@@ -72,9 +74,13 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
           const msg =
             type === "group_deleted"
-              ? `O grupo ${groupName ?? ""} foi excluído.`
-              : `Você foi removido do grupo ${groupName ?? ""}.`;
-          toast.info(msg.trim());
+              ? groupName
+                ? t("toastGroupDeleted", { name: groupName })
+                : t("toastGroupDeletedGeneric")
+              : groupName
+                ? t("toastRemoved", { name: groupName })
+                : t("toastRemovedGeneric");
+          toast.info(msg);
 
           if (pathRef.current?.startsWith(`/groups/${groupSlug}`)) {
             router.replace("/groups");
@@ -83,10 +89,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
         if (type === "join_request_created" && groupSlug) {
           utils.groups.listJoinRequests.invalidate({ group_slug: groupSlug });
-          const username = typeof data.username === "string" ? data.username : "Alguém";
-          toast.info(`${username} quer entrar no seu grupo.`, {
+          const username = typeof data.username === "string" ? data.username : t("someone");
+          toast.info(t("toastJoinRequest", { user: username }), {
             action: {
-              label: "Ver",
+              label: t("view"),
               onClick: () => router.push(`/groups/${groupSlug}`),
             },
           });
@@ -94,30 +100,30 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
         if (type === "join_request_accepted" && groupSlug) {
           utils.groups.list.invalidate();
-          toast.success(groupName ? `Você entrou no grupo ${groupName}!` : "Você entrou no grupo!", {
+          toast.success(groupName ? t("toastJoined", { name: groupName }) : t("toastJoinedGeneric"), {
             action: {
-              label: "Abrir grupo",
+              label: t("openGroup"),
               onClick: () => router.push(`/groups/${groupSlug}`),
             },
           });
         }
 
         if (type === "task_assigned" || type === "subtask_assigned") {
-          const assignedBy = typeof data.assigned_by === "string" ? data.assigned_by : "Alguém";
-          const kind = type === "task_assigned" ? "tarefa" : "subtarefa";
+          const assignedBy = typeof data.assigned_by === "string" ? data.assigned_by : t("someone");
+          const isTask = type === "task_assigned";
           if (groupSlug) {
             utils.tasks.listGroup.invalidate({ group_slug: groupSlug });
             const msg = groupName
-              ? `${assignedBy} atribuiu uma ${kind} a você no grupo ${groupName}.`
-              : `${assignedBy} atribuiu uma ${kind} a você.`;
+              ? t(isTask ? "taskAssignedIn" : "subtaskAssignedIn", { user: assignedBy, name: groupName })
+              : t(isTask ? "taskAssigned" : "subtaskAssigned", { user: assignedBy });
             toast.info(msg, {
               action: {
-                label: "Abrir grupo",
+                label: t("openGroup"),
                 onClick: () => router.push(`/groups/${groupSlug}`),
               },
             });
           } else {
-            toast.info(`${assignedBy} atribuiu uma ${kind} a você.`);
+            toast.info(t(isTask ? "taskAssigned" : "subtaskAssigned", { user: assignedBy }));
           }
         }
 
@@ -144,9 +150,9 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         }
 
         if (type === "daily_reminder") {
-          toast.warning("Você ainda não fez nenhuma tarefa do diário hoje.", {
+          toast.warning(t("dailyReminder"), {
             action: {
-              label: "Ver diário",
+              label: t("viewDiary"),
               onClick: () => router.push("/diary"),
             },
           });

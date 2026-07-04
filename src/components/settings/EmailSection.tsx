@@ -1,23 +1,35 @@
 "use client";
 
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useRequestEmailChange, useConfirmEmailChange } from "@/hooks/use-auth";
 import { SettingsSection, LabeledInput } from "./primitives";
 import { CodeConfirmForm } from "./CodeConfirmForm";
 
-const schema = z.object({
-  new_email: z.string().email("Email inválido"),
-  password: z.string().min(1, "Informe sua senha atual"),
-});
+type Fields = { new_email: string; password: string };
 
-type Fields = z.infer<typeof schema>;
+const highlight = (c: React.ReactNode) => (
+  <span className="font-medium text-foreground">{c}</span>
+);
 
 export function EmailSection({ email }: { email: string }) {
+  const t = useTranslations("settings");
   const request = useRequestEmailChange();
   const confirm = useConfirmEmailChange();
+
+  const schema = useMemo(
+    () =>
+      z.object({
+        new_email: z.string().email(t("emailInvalid")),
+        password: z.string().min(1, t("currentPasswordRequired")),
+      }),
+    [t],
+  );
+
   const {
     register,
     handleSubmit,
@@ -30,15 +42,10 @@ export function EmailSection({ email }: { email: string }) {
 
   if (request.isSuccess) {
     return (
-      <SettingsSection title="Email">
+      <SettingsSection title={t("emailTitle")}>
         <CodeConfirmForm
-          description={
-            <>
-              Digite o código de 6 dígitos enviado para{" "}
-              <span className="font-medium text-foreground">{getValues("new_email")}</span>.
-            </>
-          }
-          submitLabel="Confirmar novo email"
+          description={t.rich("emailCodeSent", { email: getValues("new_email"), highlight })}
+          submitLabel={t("confirmNewEmail")}
           isPending={confirm.isPending}
           onSubmit={(code) => confirm.mutate({ code })}
           onCancel={() => request.reset()}
@@ -49,16 +56,12 @@ export function EmailSection({ email }: { email: string }) {
 
   return (
     <SettingsSection
-      title="Email"
-      description={
-        <>
-          Email atual: <span className="font-medium text-foreground">{email}</span>
-        </>
-      }
+      title={t("emailTitle")}
+      description={t.rich("currentEmail", { email, highlight })}
     >
       <form onSubmit={handleSubmit((data) => request.mutate(data))} className="space-y-4">
         <LabeledInput
-          label="Novo email"
+          label={t("newEmail")}
           type="email"
           autoComplete="email"
           placeholder="voce@exemplo.com"
@@ -66,14 +69,14 @@ export function EmailSection({ email }: { email: string }) {
           {...register("new_email")}
         />
         <LabeledInput
-          label="Senha atual"
+          label={t("currentPassword")}
           type="password"
           autoComplete="current-password"
           error={errors.password?.message}
           {...register("password")}
         />
         <Button type="submit" disabled={request.isPending}>
-          {request.isPending ? "Enviando..." : "Enviar código"}
+          {request.isPending ? t("sending") : t("sendCode")}
         </Button>
       </form>
     </SettingsSection>

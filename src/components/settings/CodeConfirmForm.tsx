@@ -1,16 +1,14 @@
 "use client";
 
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { LabeledInput } from "./primitives";
 
-const schema = z.object({
-  code: z.string().length(6, "O código deve ter 6 dígitos").regex(/^\d{6}$/, "Apenas números"),
-});
-
-type Fields = z.infer<typeof schema>;
+type Fields = { code: string };
 
 interface Props {
   description: React.ReactNode;
@@ -21,6 +19,17 @@ interface Props {
 }
 
 export function CodeConfirmForm({ description, submitLabel, isPending, onSubmit, onCancel }: Props) {
+  const t = useTranslations("settings");
+  const tCommon = useTranslations("common");
+
+  const schema = useMemo(
+    () =>
+      z.object({
+        code: z.string().length(6, t("codeLength")).regex(/^\d{6}$/, t("codeDigitsOnly")),
+      }),
+    [t],
+  );
+
   const {
     register,
     handleSubmit,
@@ -34,7 +43,7 @@ export function CodeConfirmForm({ description, submitLabel, isPending, onSubmit,
     <form onSubmit={handleSubmit((data) => onSubmit(data.code))} className="space-y-4">
       <p className="text-sm text-foreground-muted">{description}</p>
       <LabeledInput
-        label="Código"
+        label={t("code")}
         inputMode="numeric"
         autoComplete="one-time-code"
         maxLength={6}
@@ -44,10 +53,10 @@ export function CodeConfirmForm({ description, submitLabel, isPending, onSubmit,
       />
       <div className="flex gap-2">
         <Button type="submit" disabled={isPending}>
-          {isPending ? "Confirmando..." : submitLabel}
+          {isPending ? t("confirming") : submitLabel}
         </Button>
         <Button type="button" variant="ghost" onClick={onCancel} disabled={isPending}>
-          Cancelar
+          {tCommon("cancel")}
         </Button>
       </div>
     </form>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   DialogHeader,
@@ -27,7 +28,7 @@ import { formatCreatedAtLocal, isoToLocalInput, localInputToIso } from "@/utils/
 import type { Task, Subtask } from "@/types/api";
 import { TimelineTab } from "./TimelineTab";
 import {
-  itemFormSchema,
+  makeItemFormSchema,
   type CommonItem,
   type DeleteAction,
   type ItemFormFields,
@@ -48,6 +49,8 @@ interface Props {
 }
 
 export function ItemFields({ item, kind, groupSlug, update, remove, onClose }: Props) {
+  const t = useTranslations("taskModal");
+  const tCommon = useTranslations("common");
   const { data: members = [] } = useGroupMembers(groupSlug ?? "");
   const { user } = useAuth();
   const { data: subtasks = [], isLoading: loadingSubtasks } = useSubtasks(
@@ -78,7 +81,7 @@ export function ItemFields({ item, kind, groupSlug, update, remove, onClose }: P
     handleSubmit,
     formState: { isDirty, errors },
   } = useForm<ItemFormFields>({
-    resolver: zodResolver(itemFormSchema),
+    resolver: zodResolver(useMemo(() => makeItemFormSchema(t), [t])),
     defaultValues: {
       title: item.title,
       description: item.description ?? "",
@@ -144,29 +147,29 @@ export function ItemFields({ item, kind, groupSlug, update, remove, onClose }: P
   return (
     <div>
       <DialogHeader>
-        <DialogTitle>{kind === "task" ? "Editar tarefa" : "Editar subtarefa"}</DialogTitle>
+        <DialogTitle>{kind === "task" ? t("editTask") : t("editSubtask")}</DialogTitle>
         <DialogDescription className="text-[11px]">
           <span className="font-medium text-foreground-muted">@{item.creator_username}</span>
-          {" · criada em "}
-          {formatCreatedAtLocal(item.created_at)}
+          {" · "}
+          {t("createdAt", { date: formatCreatedAtLocal(item.created_at) })}
         </DialogDescription>
       </DialogHeader>
 
       {kind === "task" ? (
         <Tabs defaultValue="details">
           <TabsList>
-            <TabsTrigger value="details">Detalhes</TabsTrigger>
-            <TabsTrigger value="subtasks">Subtarefas ({subtasks.length})</TabsTrigger>
-            <TabsTrigger value="activity">Atividade</TabsTrigger>
+            <TabsTrigger value="details">{t("detailsTab")}</TabsTrigger>
+            <TabsTrigger value="subtasks">{t("subtasksTab", { count: subtasks.length })}</TabsTrigger>
+            <TabsTrigger value="activity">{t("activityTab")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details" className="space-y-3">
             {fields}
             <div>
-              <label className="mb-0.5 block text-xs text-foreground-muted">Categoria</label>
+              <label className="mb-0.5 block text-xs text-foreground-muted">{t("category")}</label>
               <Select value={currentCategory} onValueChange={moveCategory}>
                 <SelectTrigger size="sm" className="w-full">
-                  <SelectValue placeholder="Categoria" />
+                  <SelectValue placeholder={t("category")} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((c) => (
@@ -215,10 +218,10 @@ export function ItemFields({ item, kind, groupSlug, update, remove, onClose }: P
           {confirmDelete ? (
             <>
               <Button type="button" variant="destructive" size="sm" onClick={handleDelete} disabled={pending}>
-                Confirmar exclusão
+                {t("confirmDelete")}
               </Button>
               <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmDelete(false)} disabled={pending}>
-                Cancelar
+                {tCommon("cancel")}
               </Button>
             </>
           ) : (
@@ -229,16 +232,16 @@ export function ItemFields({ item, kind, groupSlug, update, remove, onClose }: P
               onClick={() => setConfirmDelete(true)}
               className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
-              <Trash2 className="mr-1.5 h-4 w-4" /> Excluir
+              <Trash2 className="mr-1.5 h-4 w-4" /> {t("delete")}
             </Button>
           )}
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={pending}>
-            Cancelar
+            {tCommon("cancel")}
           </Button>
           <Button type="button" size="sm" onClick={handleSubmit(onSubmit)} disabled={pending}>
-            Salvar
+            {t("save")}
           </Button>
         </div>
       </DialogFooter>
